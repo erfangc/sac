@@ -22,44 +22,30 @@ A group assignment is a `principal`, `group` pair that denotes the inclusion of 
 
 The `policy` is the primary object in SAC that describes authorization rules. A `policy` can be applied (assigned) to principals or groups. The `policy` defines the resources that the assigned principal have access to as well as the actions that principal is permitted to perform
 
-Example Policy:
+Example policy to protect a single resource:
 ```yaml
-policy:
-    id: secret key policy
-    resource: /secrets/secretKey
-    actions:
-      - view
-      - remove
-      - alter
-``` 
+id: secret key policy
+resource: /secrets/secretKey
+actions:
+  - view
+  - remove
+  - alter
+```
 
 This example policy can be verbalized into natural language as follows:
 
  > The assignee of this policy may view, remove or alter the contents of the resource 
  identified as /secrets/secretKey
 
-Multiple resources in a single policy can be expressed as:
-```yaml
-policy:
-    id: friend policy
-    resources:
-      - /friends/friend1
-      - /friends/friend2
-    actions:
-      - message
-      - unfriend
-``` 
-
 You may also use wildcards in policies to give broad permission:
 
 ```yaml
-policy
-    id: inventory manager policy
-    resource: /inventory/*
-    actions:
-      - restock
-      - sell
-      - purge
+id: inventory manager policy
+resource: /inventory/*
+actions:
+  - restock
+  - sell
+  - purge
 ```
 
 #### Resource
@@ -75,14 +61,20 @@ Finally and to summarize: a `resource` is any protected entity represented as a 
 `Actions` are verbs that a principal can perform against a resource. For example, if you are drafting a policy that is intended to grant read access to a certain document you will specify the action "read" as follows:
 
 ```yaml
-policy:
-    id: my-document.txt readonly policy
-    resource: /documents/my-document.txt
-    actions:
-      - read
+id: my-document.txt readonly policy
+resource: /documents/my-document.txt
+actions:
+  - read
 ```
 
-Like resources, a wildcard can be used to represent all actions are allowed
+Like resources, a wildcard can be used to represent all actions are allowed:
+
+```yaml
+id: my-document.txt
+resource: /documents/my-document.txt
+actions:
+  - *
+```
 
 ### Policy Assignment
 
@@ -92,19 +84,119 @@ Similar to `group assignment`, a `policy assignment` denote the applicability of
 
 ### Managing Groups
 
+Groups are represented the with `Group` object. You can also attach assignments to the `Group` object you create. Construct one by using the immutable class as follows:
+
 #### Creating / updating / deleting groups
+
+```java
+final String id = "network admins";
+ImmutableGroup
+        .builder()
+        .addAssignments(
+                ImmutableGroupAssignment
+                        .builder()
+                        .groupId(id)
+                        .principal("johndoe")
+                        .build(),
+                ImmutableGroupAssignment
+                        .builder()
+                        .groupId(id)
+                        .principal("unix network admins")
+                        .principalIsGroup(true)
+                        .build()
+        )
+        .id(id)
+        .description("Esteemed colleagues from the network administration team")
+        .name("Network Admins")
+        .build();
+
+// create a group
+sac.createGroup(group);
+
+// update a group
+sac.update(group);
+
+// delete a group
+sac.delete(groupId);
+```
 
 #### Assigning / un-assigning principals
 
-#### Listing all the users in a group
+```java
+String groupId = "human resources";
+
+// assign a new principal to groups
+sac.assignPrincipalToGroup(groupId, "johndoe");
+sac.assignPrincipalToGroup(groupId, "janesmith");
+sac.assignPrincipalToGroup(groupId, "external hr services", true);
+
+// unassign
+sac.unassignPrincipalToGroup(groupId, "johndoe");
+```
+
+#### Listing all the principals in a group
+
+```java
+List<String> principals = sac.getAllPrincipalsForGroup(groupId);
+```
+
+#### Group tree
+
+Since group membership can consist of other groups, a given principal can be assigned to another group transitively. For example if `user1` is assigned to `group 1` and `group 1` is a member of `group 2` then `user1` is also a member of `group 2`. Any policies assigned to `group 2` will also be in effect for `user1`. You can query the membership, including transitive member ship, of a principal as follows:
 
 #### Find all groups a given user belongs to
+
+```java
+List<Group> groups = sac.getGroupMembership("user1");
+```
+
+You can also graph the entire tree starting at a given group as well:
+
+```java
+Node root = sac.getGroupTree("my group");
+```
+
+#### Dealing with circular memberships
+
+If `group1` is a member of `group2`, `group2` is a member of `group3` then neither `group1` or `group2` cannot be a a member of `group3` 
+
+```
+group1 -> group2 -> group3 -> group1 [Not allowed]
+```
 
 ### Managing Policies
 
 #### Creating / updating / deleting policies
 
+```java
+final ImmutablePolicy policy = ImmutablePolicy
+                .builder()
+                .id("xyz")
+                .resource("/my-org/my-dept/my-resource")
+                .actions(Arrays.asList("read", "write"))
+                .build();
+
+// create a policy
+sac.createPolicy(policy);
+
+// update a policy
+sac.updatePolicy(policy);
+
+// delete a policy
+sac.deletePolicy(policy.id());
+```
+
 #### Assign / un-assigning policy to principal or groups
+
+```java
+// assign a principal to policy
+sac.assignPolicy(policyId, "user1");
+sac.assignPolicy(policyId, "group1");
+
+// unassign a principal to policy
+sac.unAssignPolicy(policyId, "user1");
+sac.unAssignPolicy(policyId, "group1");
+```
 
 ### Making Authorization Decisions
 
@@ -113,28 +205,46 @@ Similar to `group assignment`, a `policy assignment` denote the applicability of
 The `AuthorizationRequest` object
 
 ```yaml
-
-```
-
-```java
-
+id: "123"
+principal: "joe"
+resource: "/org/dept/my-resource"
+action: "read"
 ```
 
 To make an authorization request using the core library, invoke the `authorize()` method
 
 ```java
+final ImmutableAuthorizationRequest request = ImmutableAuthorizationRequest
+                .builder()
+                .action("read")
+                .resource("/org/dept/my-resource")
+                .id("123")
+                .principal("joe")
+                .build();
 AuthorizationResponse resp = sac.authorize(request);
-assert resp.getStatus().equals(AuthorizationStatus.Permitted)
+assert resp.status().equals(AuthorizationStatus.Permitted)
 ```
 
-The `AuthorizationResponse` object
+The `AuthorizationResponse` object:
+```yaml
+requestId: "123"
+status: "Permitted"
+remarks:
+  present: true
+```
 
 ## Development
 
 ### Components
 
+The project is split into a few components for modularity. Each component is represented by a Maven module
+
 ### Modules
 
 #### sac-core
 
+`sac-core` represents the core module that handles the business logic of making the authorization decision. `sac-core` relies on data presented to it by other modules. The way `sac-core` interfaces with other modules is by declaring interfaces that the supplementary modules must implement 
+
 #### sac-store-h2
+
+`sac-store-h2` implements the data interfaces declared by `sac-core` using an h2 embedded database. This is useful for proof-of-concepts, demos, integration tests and other non-production use cases 
