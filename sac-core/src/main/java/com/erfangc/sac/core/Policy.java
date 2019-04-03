@@ -9,9 +9,11 @@ import java.util.Optional;
 public interface Policy {
     String id();
 
-    String name();
+    Optional<Boolean> effectDeny();
 
-    String description();
+    Optional<String> name();
+
+    Optional<String> description();
 
     Optional<String> resource();
 
