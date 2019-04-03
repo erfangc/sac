@@ -38,7 +38,7 @@ public class InMemoryBackend implements Backend {
     }
 
     @Override
-    public Group getGroup(Group id) {
+    public Group getGroup(String id) {
         return null;
     }
 
@@ -88,7 +88,7 @@ public class InMemoryBackend implements Backend {
     }
 
     @Override
-    public Policy getPolicy(Policy policy) {
+    public Policy getPolicy(String policyId) {
         return null;
     }
 

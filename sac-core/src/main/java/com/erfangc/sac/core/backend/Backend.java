@@ -14,7 +14,7 @@ public interface Backend {
 
     void createGroup(Group group);
 
-    Group getGroup(Group id);
+    Group getGroup(String id);
 
     void update(Group group);
 
@@ -34,7 +34,7 @@ public interface Backend {
 
     void createPolicy(Policy policy);
 
-    Policy getPolicy(Policy policy);
+    Policy getPolicy(String policyId);
 
     void updatePolicy(Policy policy);
 

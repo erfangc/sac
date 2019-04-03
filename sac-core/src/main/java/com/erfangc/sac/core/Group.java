@@ -3,6 +3,7 @@ package com.erfangc.sac.core;
 import org.immutables.value.Value;
 
 import java.util.List;
+import java.util.Optional;
 
 @Value.Immutable
 public interface Group {
@@ -10,7 +11,7 @@ public interface Group {
 
     String name();
 
-    String description();
+    Optional<String> description();
 
-    List<GroupAssignment> assignments();
+    Optional<List<GroupAssignment>> assignments();
 }

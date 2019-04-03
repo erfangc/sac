@@ -3,11 +3,11 @@ package com.erfangc.sac.core.service;
 import com.erfangc.sac.core.*;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 public class PolicyDecisionMakerTest {
@@ -26,7 +26,7 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = asList(
+        List<Policy> policies = singletonList(
                 ImmutablePolicy
                         .builder()
                         .id("policy1")
@@ -37,6 +37,122 @@ public class PolicyDecisionMakerTest {
 
         final AuthorizationResponse response = policyDecisionMaker.makeAccessDecision(request, policies);
         assertEquals(AuthorizationStatus.Permitted, response.status());
+    }
+
+    @Test
+    public void makeAccessDecisionMultipleDenyEffects() {
+
+        final PolicyDecisionMaker policyDecisionMaker = new PolicyDecisionMaker();
+        final String requestId = UUID.randomUUID().toString();
+
+        AuthorizationRequest request = ImmutableAuthorizationRequest
+                .builder()
+                .id(requestId)
+                .principal("john")
+                .resource("/hr/salaries/john")
+                .action("increase")
+                .build();
+
+        List<Policy> policies = asList(
+                ImmutablePolicy
+                        .builder()
+                        .id("policy1")
+                        .actions(asList("increase", "decrease"))
+                        .resource("/hr/salaries/john")
+                        .effectDeny(true)
+                        .build(),
+                ImmutablePolicy
+                        .builder()
+                        .id("policy2")
+                        .actions(asList("increase", "decrease"))
+                        .resource("/hr/salaries/john")
+                        .effectDeny(true)
+                        .build()
+        );
+
+        final AuthorizationResponse response = policyDecisionMaker.makeAccessDecision(request, policies);
+        assertEquals(AuthorizationStatus.Denied, response.status());
+    }
+
+    @Test
+    public void makeAccessDecisionAllPowerful() {
+
+        final PolicyDecisionMaker policyDecisionMaker = new PolicyDecisionMaker();
+        final String requestId = UUID.randomUUID().toString();
+
+        AuthorizationRequest request = ImmutableAuthorizationRequest
+                .builder()
+                .id(requestId)
+                .principal("john")
+                .resource("/hr/salaries/john")
+                .action("increase")
+                .build();
+
+        List<Policy> policies = singletonList(
+                ImmutablePolicy
+                        .builder()
+                        .id("policy1")
+                        .actions(singletonList("*"))
+                        .resource("*")
+                        .build()
+        );
+
+        final AuthorizationResponse response = policyDecisionMaker.makeAccessDecision(request, policies);
+        assertEquals(AuthorizationStatus.Permitted, response.status());
+    }
+
+    @Test
+    public void makeAccessDecisionActionWildcard() {
+
+        final PolicyDecisionMaker policyDecisionMaker = new PolicyDecisionMaker();
+        final String requestId = UUID.randomUUID().toString();
+
+        AuthorizationRequest request = ImmutableAuthorizationRequest
+                .builder()
+                .id(requestId)
+                .principal("john")
+                .resource("/hr/salaries/john")
+                .action("increase")
+                .build();
+
+        List<Policy> policies = singletonList(
+                ImmutablePolicy
+                        .builder()
+                        .id("policy1")
+                        .actions(singletonList("*"))
+                        .resource("/hr/salaries/*")
+                        .build()
+        );
+
+        final AuthorizationResponse response = policyDecisionMaker.makeAccessDecision(request, policies);
+        assertEquals(AuthorizationStatus.Permitted, response.status());
+    }
+
+    @Test
+    public void makeAccessDecisionDenyOnAction() {
+
+        final PolicyDecisionMaker policyDecisionMaker = new PolicyDecisionMaker();
+        final String requestId = UUID.randomUUID().toString();
+
+        List<Policy> policies = singletonList(
+                ImmutablePolicy
+                        .builder()
+                        .id("policy1")
+                        .actions(asList("increase", "decrease"))
+                        .resource("/hr/salaries/john")
+                        .build()
+        );
+
+        AuthorizationRequest request2 = ImmutableAuthorizationRequest
+                .builder()
+                .id(requestId)
+                .principal("john")
+                .resource("/hr/salaries/john")
+                .action("delete")
+                .build();
+
+        final AuthorizationResponse response2 = policyDecisionMaker.makeAccessDecision(request2, policies);
+        assertEquals(AuthorizationStatus.Denied, response2.status());
 
     }
 
@@ -92,9 +208,15 @@ public class PolicyDecisionMakerTest {
         List<Policy> policies = asList(
                 ImmutablePolicy
                         .builder()
-                        .id("policy2")
+                        .id("policy1")
                         .actions(asList("increase", "decrease"))
                         .resource("/hr/salaries/john")
+                        .build(),
+                ImmutablePolicy
+                        .builder()
+                        .id("policy2")
+                        .actions(singletonList("*"))
+                        .resource("/hr/birthdays")
                         .build()
         );
 
@@ -121,7 +243,7 @@ public class PolicyDecisionMakerTest {
                 ImmutablePolicy
                         .builder()
                         .id("policy1")
-                        .actions(Collections.singletonList("*"))
+                        .actions(singletonList("*"))
                         .resource("/hr/birthdays/*")
                         .build(),
                 ImmutablePolicy
@@ -151,7 +273,7 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = asList(
+        List<Policy> policies = singletonList(
                 ImmutablePolicy
                         .builder()
                         .id("policy1")
@@ -179,7 +301,7 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = asList(
+        List<Policy> policies = singletonList(
                 ImmutablePolicy
                         .builder()
                         .id("policy1")

@@ -11,7 +11,7 @@ public interface SimpleAccessControl {
 
     void createGroup(Group group);
 
-    Group getGroup(Group id);
+    Group getGroup(String id);
 
     void update(Group group);
 

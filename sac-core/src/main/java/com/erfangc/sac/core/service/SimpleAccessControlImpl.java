@@ -21,8 +21,8 @@ public class SimpleAccessControlImpl implements SimpleAccessControl {
     }
 
     @Override
-    public Group getGroup(Group id) {
-        return backend.getGroup(id);
+    public Group getGroup(String id) {
+        return null;
     }
 
     @Override
