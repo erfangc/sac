@@ -80,7 +80,21 @@ actions:
 
 Similar to `group assignment`, a `policy assignment` denote the applicability of a principal to a given policy. Creating a policy by itself does not actually affect any authorization SAC performs until that policy is assigned to an principal
 
-## Use Cases
+## Usage
+
+In order to use the core functionalities of the library. You should first choose an appropriate `Backend`, which handles persistence and lifecycle of the concepts illustrates above, namely: `Policy`, `Group` etc. The `Backend` exposes a specific set of methods that an given storage medium must be able tp implement and support
+
+```java
+SimpleAccessControl sac = new SimpleAccessControlImpl(myBackend);
+```
+
+### Test Drive Using the In Memory Implementation
+
+You can try out the functionalities of the core library without a durable back end like Postgres, MySQL or Redis. We provide an in-memory implementation of the core library that can be instantiated as follows: 
+
+```java
+final InMemorySimpleAccessControl sac = InMemorySimpleAccessControl.getInstance();
+```
 
 ### Managing Groups
 

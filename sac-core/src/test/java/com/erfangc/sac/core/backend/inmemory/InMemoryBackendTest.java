@@ -7,7 +7,6 @@ import org.junit.Test;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
@@ -32,10 +31,8 @@ public class InMemoryBackendTest {
         backend.createPolicy(serverLoginPolicy);
         final Policy managePayPolicy = managePayPolicy();
         backend.createPolicy(managePayPolicy);
-
         backend.assignPolicy(employeeReadOnlyPolicy.id(), networkAdmins.id());
         backend.assignPolicy(serverLoginPolicy.id(), networkAdmins.id());
-
         backend.assignPolicy(employeeReadOnlyPolicy.id(), humanResources.id());
         backend.assignPolicy(managePayPolicy.id(), humanResources.id());
     }
@@ -255,9 +252,27 @@ public class InMemoryBackendTest {
         backend.assignPolicy(policyId, "john");
         final List<String> policyIds = backend.resolvePolicyIdsForPrincipal("john");
         assertTrue(policyIds.contains(policyId));
-
         backend.unAssignPolicy(policyId, "john");
         final List<String> policyIds2 = backend.resolvePolicyIdsForPrincipal("john");
         assertFalse(policyIds2.contains(policyId));
+    }
+
+    @Test
+    public void unAssignFromGroupShouldRemovePolicyAssignmentTransitively() {
+        final ImmutableGroup allEmployees = allEmployees();
+        final Group networkAdmins = networkAdmins();
+        backend.createGroup(allEmployees);
+        final Policy employeeReadOnlyPolicy = employeeReadOnlyPolicy();
+        backend.createPolicy(employeeReadOnlyPolicy);
+        backend.assignPolicy(employeeReadOnlyPolicy.id(), allEmployees.id());
+        backend.assignPrincipalToGroup(allEmployees.id(), networkAdmins.id(), true);
+        final String joe = "joe";
+        backend.assignPrincipalToGroup(networkAdmins.id(), joe);
+        final List<String> policyIds = backend.resolvePolicyIdsForPrincipal(joe);
+        assertFalse(policyIds.isEmpty());
+        assertEquals(2, policyIds.size());
+        backend.unassignPrincipalFromGroup(networkAdmins.id(), joe);
+        final List<String> policyIds2 = backend.resolvePolicyIdsForPrincipal(joe);
+        assertTrue(policyIds2.isEmpty());
     }
 }

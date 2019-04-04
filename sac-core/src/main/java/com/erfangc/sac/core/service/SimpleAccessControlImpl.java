@@ -22,16 +22,16 @@ public class SimpleAccessControlImpl implements SimpleAccessControl {
 
     @Override
     public Group getGroup(String id) {
-        return null;
+        return backend.getGroup(id);
     }
 
     @Override
-    public void update(Group group) {
+    public void updateGroup(Group group) {
         backend.updateGroup(group);
     }
 
     @Override
-    public void delete(String groupId) {
+    public void deleteGroup(String groupId) {
         backend.deleteGroup(groupId);
     }
 
@@ -46,23 +46,23 @@ public class SimpleAccessControlImpl implements SimpleAccessControl {
     }
 
     @Override
-    public void unassignPrincipalToGroup(String groupId, String principalId) {
+    public void unassignPrincipalFromGroup(String groupId, String principalId) {
         backend.unassignPrincipalFromGroup(groupId, principalId);
     }
 
     @Override
     public List<String> getAllPrincipalsForGroup(String groupId) {
-        return null;
+        return backend.getAllPrincipalsForGroup(groupId);
     }
 
     @Override
     public List<String> getGroupMembership(String principalId) {
-        return null;
+        return backend.getGroupMembership(principalId);
     }
 
     @Override
-    public List<Node> getGroupTree(String groupId) {
-        return null;
+    public Node getGroupTree(String groupId) {
+        return backend.getGroupTree(groupId);
     }
 
     @Override
@@ -71,8 +71,8 @@ public class SimpleAccessControlImpl implements SimpleAccessControl {
     }
 
     @Override
-    public Policy getPolicy(Policy policy) {
-        return null;
+    public Policy getPolicy(String policyId) {
+        return backend.getPolicy(policyId);
     }
 
     @Override

@@ -119,10 +119,13 @@ public class InMemoryBackend implements Backend {
     public synchronized void unassignPrincipalFromGroup(String groupId, String principalId) {
         final Map<String, Group> m1 = groupToGroupMap.getOrDefault(groupId, new HashMap<>());
         m1.remove(principalId);
+        groupToGroupMap.put(groupId, m1);
         final Map<String, String> m2 = groupToPrincipalMap.getOrDefault(groupId, new HashMap<>());
         m2.remove(principalId);
-        final Map<String, Group> m3 = principalToGroupMap.getOrDefault(groupId, new HashMap<>());
-        m3.remove(principalId);
+        groupToPrincipalMap.put(groupId, m2);
+        final Map<String, Group> m3 = principalToGroupMap.getOrDefault(principalId, new HashMap<>());
+        m3.remove(groupId);
+        principalToGroupMap.put(principalId, m3);
     }
 
     @Override
