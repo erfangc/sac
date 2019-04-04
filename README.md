@@ -261,4 +261,12 @@ The project is split into a few components for modularity. Each component is rep
 
 #### sac-store-h2
 
-`sac-store-h2` implements the data interfaces declared by `sac-core` using an h2 embedded database. This is useful for proof-of-concepts, demos, integration tests and other non-production use cases 
+`sac-store-h2` implements the data interfaces declared by `sac-core` using an h2 embedded database. This is useful for proof-of-concepts, demos, integration tests and other non-production use cases
+
+## TODOs
+
+ - Redis backend
+ - Terraform templates
+ - Resource based access control (i.e. bypass policy assignment scan)
+ - Principal attribute forwarding in policies
+ - Conditions in policies

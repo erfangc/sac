@@ -6,8 +6,7 @@ import com.erfangc.sac.core.backend.Backend;
 import java.util.*;
 
 import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 public class InMemoryBackend implements Backend {
 
@@ -33,24 +32,31 @@ public class InMemoryBackend implements Backend {
     @Override
     public List<String> resolvePolicyIdsForPrincipal(String principalId) {
         final Map<String, Group> m1 = principalToGroupMap.get(principalId);
-        Set<String> seen = new HashSet<>();
-        // find a flat list of all group memberships
+        // BFS to to construct a list of group membership and transitive group memberships for this principal
+        // gids = groupIds, represents the group Ids the BFS has seen so far, used to both keep track of the results of the
+        // traversal but also mark visited 'nodes' and prevent them from being processed again
+        Set<String> gids = new HashSet<>();
         if (m1 != null) {
             Queue<String> queue = m1.values().stream().map(Group::id).collect(toCollection(ArrayDeque::new));
             while (!queue.isEmpty()) {
                 final String gid = queue.poll();
-                seen.add(gid);
+                gids.add(gid);
                 if (principalToGroupMap.containsKey(gid)) {
                     for (String cGid : principalToGroupMap.get(gid).keySet()) {
-                        if (!seen.contains(cGid)) {
+                        if (!gids.contains(cGid)) {
                             queue.add(cGid);
                         }
                     }
                 }
             }
         }
-        Set<String> ret = principalToPolicyMap.containsKey(principalId) ? principalToPolicyMap.get(principalId).values().stream().map(Policy::id).collect(java.util.stream.Collectors.toSet()) : new HashSet<>();
-        seen.forEach(gid -> ret.addAll(principalToPolicyMap.getOrDefault(gid, emptyMap()).values().stream().map(Policy::id).collect(toList())));
+        Set<String> ret = principalToPolicyMap.containsKey(principalId) ? principalToPolicyMap
+                .get(principalId)
+                .values()
+                .stream()
+                .map(Policy::id)
+                .collect(toSet()) : new HashSet<>();
+        gids.forEach(gid -> ret.addAll(principalToPolicyMap.getOrDefault(gid, emptyMap()).values().stream().map(Policy::id).collect(toList())));
         return new ArrayList<>(ret);
     }
 
