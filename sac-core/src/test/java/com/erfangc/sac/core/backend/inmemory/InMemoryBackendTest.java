@@ -4,11 +4,15 @@ import com.erfangc.sac.core.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 
 public class InMemoryBackendTest {
@@ -17,7 +21,6 @@ public class InMemoryBackendTest {
 
     @Before
     public void setUp() {
-
         backend = new InMemoryBackend();
         final Group networkAdmins = networkAdmins();
         backend.createGroup(networkAdmins);
@@ -82,9 +85,13 @@ public class InMemoryBackendTest {
 
     @Test
     public void resolvePolicyIdsForPrincipal() {
+        final ImmutableGroup allEmployees = allEmployees();
+        backend.createGroup(allEmployees);
+        backend.assignPolicy(employeeReadOnlyPolicy().id(), allEmployees.id());
+        backend.assignPrincipalToGroup(allEmployees.id(), networkAdmins().id(), true);
         backend.assignPrincipalToGroup(networkAdmins().id(), "john");
         final List<String> policyIds = backend.resolvePolicyIdsForPrincipal("john");
-        assertEquals(asList("server login", "employee read only"), policyIds);
+        assertEquals(Stream.of("server login", "employee read only").collect(toSet()), new HashSet<>(policyIds));
     }
 
     @Test
@@ -111,7 +118,7 @@ public class InMemoryBackendTest {
     public void update() {
         final String groupId = networkAdmins().id();
         final Group group = backend.getGroup(groupId);
-        backend.update(
+        backend.updateGroup(
                 ImmutableGroup
                         .copyOf(group)
                         .withName("Foo")
@@ -121,8 +128,8 @@ public class InMemoryBackendTest {
     }
 
     @Test
-    public void delete() {
-        backend.delete(networkAdmins().id());
+    public void deleteGroup() {
+        backend.deleteGroup(networkAdmins().id());
         final Group group = backend.getGroup(networkAdmins().id());
         assertNull(group);
     }
@@ -148,11 +155,11 @@ public class InMemoryBackendTest {
         final Optional<GroupAssignment> john = assignments.get().stream().filter(r -> r.principal().equals("john")).findFirst();
         assertTrue(john.isPresent());
 
-        backend.unassignPrincipalToGroup(group.id(), "john");
+        backend.unassignPrincipalFromGroup(group.id(), "john");
         final Group result2 = backend.getGroup(group.id());
         final Optional<List<GroupAssignment>> assignments2 = result2.assignments();
         assertTrue(assignments2.isPresent());
-        final Optional<GroupAssignment> john2 = assignments.get().stream().filter(r -> r.principal().equals("john")).findFirst();
+        final Optional<GroupAssignment> john2 = assignments2.get().stream().filter(r -> r.principal().equals("john")).findFirst();
         assertFalse(john2.isPresent());
     }
 
@@ -180,7 +187,21 @@ public class InMemoryBackendTest {
 
     @Test
     public void getGroupTree() {
+        final ImmutableGroup allEmployees = allEmployees();
+        backend.createGroup(allEmployees);
+        backend.assignPrincipalToGroup(allEmployees.id(), networkAdmins().id(), true);
+        backend.assignPrincipalToGroup(allEmployees.id(), humanResources().id(), true);
+        Node root = backend.getGroupTree(allEmployees.id());
+        assertNotNull(root);
+        assertEquals(2, root.getChildren().size());
+    }
 
+    private ImmutableGroup allEmployees() {
+        return ImmutableGroup.
+                builder()
+                .id("all employees")
+                .name("All Employees")
+                .build();
     }
 
     @Test
@@ -193,7 +214,7 @@ public class InMemoryBackendTest {
                 .build();
         backend.createPolicy(newPolicy);
         final Policy policy = backend.getPolicy(newPolicy.id());
-        assertEquals("newPolicy", policy.id());
+        assertEquals("new policy", policy.id());
     }
 
     @Test
@@ -215,7 +236,7 @@ public class InMemoryBackendTest {
     @Test
     public void deletePolicy() {
         final String policyId = managePayPolicy().id();
-        backend.delete(policyId);
+        backend.deletePolicy(policyId);
         final Policy policy = backend.getPolicy(policyId);
         assertNull(policy);
     }
@@ -235,8 +256,7 @@ public class InMemoryBackendTest {
         final List<String> policyIds = backend.resolvePolicyIdsForPrincipal("john");
         assertTrue(policyIds.contains(policyId));
 
-        backend.unassignPrincipalToGroup(policyId, "john");
-
+        backend.unAssignPolicy(policyId, "john");
         final List<String> policyIds2 = backend.resolvePolicyIdsForPrincipal("john");
         assertFalse(policyIds2.contains(policyId));
     }

@@ -27,12 +27,12 @@ public class SimpleAccessControlImpl implements SimpleAccessControl {
 
     @Override
     public void update(Group group) {
-        backend.update(group);
+        backend.updateGroup(group);
     }
 
     @Override
     public void delete(String groupId) {
-        backend.delete(groupId);
+        backend.deleteGroup(groupId);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class SimpleAccessControlImpl implements SimpleAccessControl {
 
     @Override
     public void unassignPrincipalToGroup(String groupId, String principalId) {
-        backend.unassignPrincipalToGroup(groupId, principalId);
+        backend.unassignPrincipalFromGroup(groupId, principalId);
     }
 
     @Override

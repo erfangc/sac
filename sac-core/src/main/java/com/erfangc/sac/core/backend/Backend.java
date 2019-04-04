@@ -16,21 +16,21 @@ public interface Backend {
 
     Group getGroup(String id);
 
-    void update(Group group);
+    void updateGroup(Group group);
 
-    void delete(String groupId);
+    void deleteGroup(String groupId);
 
     void assignPrincipalToGroup(String groupId, String principalId);
 
     void assignPrincipalToGroup(String groupId, String principalId, boolean principalIsGroup);
 
-    void unassignPrincipalToGroup(String groupId, String principalId);
+    void unassignPrincipalFromGroup(String groupId, String principalId);
 
     List<String> getAllPrincipalsForGroup(String groupId);
 
     List<String> getGroupMembership(String principalId);
 
-    List<Node> getGroupTree(String groupId);
+    Node getGroupTree(String groupId);
 
     void createPolicy(Policy policy);
 
