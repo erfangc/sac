@@ -32,9 +32,6 @@ public class InMemorySimpleAccessControl implements SimpleAccessControl {
         delegate.updateGroup(group);
     }
 
-    public static void main(String[] args) {
-        final InMemorySimpleAccessControl sac = InMemorySimpleAccessControl.getInstance();
-    }
     @Override
     public void deleteGroup(String groupId) {
         delegate.deleteGroup(groupId);
