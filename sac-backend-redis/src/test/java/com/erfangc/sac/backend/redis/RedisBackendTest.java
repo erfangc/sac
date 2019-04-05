@@ -1,10 +1,13 @@
-package com.erfangc.sac.core.backend.inmemory;
+package com.erfangc.sac.backend.redis;
 
 import com.erfangc.sac.core.*;
 import com.erfangc.sac.core.backend.Backend;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import redis.embedded.RedisServer;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -15,13 +18,20 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 
-public class InMemoryBackendTest {
-
+public class RedisBackendTest {
     private Backend backend;
+    private RedisServer redisServer;
+
+    @After
+    public void tearDown() {
+        redisServer.stop();
+    }
 
     @Before
-    public void setUp() {
-        backend = new InMemoryBackend();
+    public void setUp() throws IOException {
+        redisServer = new RedisServer(6379);
+        redisServer.start();
+        backend = new RedisBackend("localhost");
         final Group networkAdmins = networkAdmins();
         backend.createGroup(networkAdmins);
         final Group humanResources = humanResources();
@@ -276,4 +286,5 @@ public class InMemoryBackendTest {
         final List<String> policyIds2 = backend.resolvePolicyIdsForPrincipal(joe);
         assertTrue(policyIds2.isEmpty());
     }
+
 }
