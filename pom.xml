@@ -10,6 +10,21 @@
     <packaging>pom</packaging>
     <name>sac</name>
 
+    <name>Simple Access Control</name>
+    <description>A modern portable authorization library</description>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/erfangc/sac</url>
+    </scm>
+
     <modules>
         <module>sac-core</module>
         <module>sac-backend-redis</module>

@@ -1,5 +1,6 @@
 # Simple Access Control (SAC)
 [![CircleCI](https://circleci.com/gh/erfangc/sac/tree/master.svg?style=svg)](https://circleci.com/gh/erfangc/sac/tree/master)
+[![codecov](https://codecov.io/gh/erfangc/sac/branch/master/graph/badge.svg)](https://codecov.io/gh/erfangc/sac)
 
 Simple Access Control (SAC) is a friendly and streamlined authorization library inspired by industry standards such as IAM, ABAC (Attribute Based Access Control) and RBAC (Role Based Access Control). SAC borrows philosophically from XACML but replaces its OASIS specification with a modern JSON/YAML representation. Much of the more esoteric aspects are also ignored at the present moment in favor of simplicity
 
