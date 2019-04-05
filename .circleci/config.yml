@@ -33,4 +33,4 @@ jobs:
       - run: mvn test
 
       - codecov/upload:
-          file: sac-core/target/jacoco.exec
+          file: sac-core/target/my-reports/jacoco.xml
