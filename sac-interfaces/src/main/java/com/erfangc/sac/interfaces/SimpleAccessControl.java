@@ -1,4 +1,4 @@
-package com.erfangc.sac.core.service;
+package com.erfangc.sac.interfaces;
 
 import com.erfangc.sac.interfaces.*;
 

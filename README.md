@@ -84,6 +84,8 @@ Similar to `group assignment`, a `policy assignment` denote the applicability of
 
 ## Usage
 
+### Backends
+
 In order to use the core functionalities of the library. You should first choose an appropriate `Backend`, which handles persistence and lifecycle of the concepts illustrates above, namely: `Policy`, `Group` etc. The `Backend` exposes a specific set of methods that an given storage medium must be able tp implement and support
 
 ```java

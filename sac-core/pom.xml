@@ -32,6 +32,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.erfangc</groupId>
+            <artifactId>sac-backend-tests</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
             <version>${jackson.version}</version>

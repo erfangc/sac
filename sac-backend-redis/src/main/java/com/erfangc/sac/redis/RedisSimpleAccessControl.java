@@ -2,7 +2,7 @@ package com.erfangc.sac.redis;
 
 import com.erfangc.sac.backend.redis.RedisBackend;
 import com.erfangc.sac.core.backend.Backend;
-import com.erfangc.sac.core.service.SimpleAccessControl;
+import com.erfangc.sac.interfaces.SimpleAccessControl;
 import com.erfangc.sac.core.service.SimpleAccessControlImpl;
 import com.erfangc.sac.interfaces.*;
 

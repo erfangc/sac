@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>sac-backend-redis</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+
     <dependencies>
         <dependency>
             <groupId>com.erfangc</groupId>
