@@ -31,8 +31,9 @@ jobs:
 
       # run tests!
       - run: mvn test
-        -
+
       - store_artifacts:
           path: sac-core/target
+
       - store_artifacts:
           path: sac-redis-backend/target
