@@ -260,9 +260,9 @@ The project is split into a few components for modularity. Each component is rep
 
 `sac-core` represents the core module that handles the business logic of making the authorization decision. `sac-core` relies on data presented to it by other modules. The way `sac-core` interfaces with other modules is by declaring interfaces that the supplementary modules must implement 
 
-#### sac-store-h2
+#### sac-backend-redis
 
-`sac-store-h2` implements the data interfaces declared by `sac-core` using an h2 embedded database. This is useful for proof-of-concepts, demos, integration tests and other non-production use cases
+`sac-backend-redis` implements the `Backend` interface declared by `sac-core` using [Lettuce](https://github.com/lettuce-io/lettuce-core)
 
 ## TODOs
 
