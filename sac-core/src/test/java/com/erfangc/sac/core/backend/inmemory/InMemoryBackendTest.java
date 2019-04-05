@@ -1,7 +1,7 @@
 package com.erfangc.sac.core.backend.inmemory;
 
-import com.erfangc.sac.core.*;
 import com.erfangc.sac.core.backend.Backend;
+import com.erfangc.sac.interfaces.*;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,19 +22,32 @@ public class InMemoryBackendTest {
     @Before
     public void setUp() {
         backend = new InMemoryBackend();
+        initializePolicyBackendStates();
+    }
+
+    private void initializePolicyBackendStates() {
         final Group networkAdmins = networkAdmins();
         backend.createGroup(networkAdmins);
+
         final Group humanResources = humanResources();
         backend.createGroup(humanResources);
+
+        final ImmutableGroup allEmployees = allEmployees();
+        backend.createGroup(allEmployees);
+
         final Policy employeeReadOnlyPolicy = employeeReadOnlyPolicy();
         backend.createPolicy(employeeReadOnlyPolicy);
+        backend.assignPolicy(employeeReadOnlyPolicy.id(), allEmployees.id());
+
+        backend.assignPrincipalToGroup(allEmployees.id(), humanResources.id(), true);
+        backend.assignPrincipalToGroup(allEmployees.id(), networkAdmins.id(), true);
+
         final Policy serverLoginPolicy = serverLoginPolicy();
         backend.createPolicy(serverLoginPolicy);
+        backend.assignPolicy(serverLoginPolicy.id(), networkAdmins.id());
+
         final Policy managePayPolicy = managePayPolicy();
         backend.createPolicy(managePayPolicy);
-        backend.assignPolicy(employeeReadOnlyPolicy.id(), networkAdmins.id());
-        backend.assignPolicy(serverLoginPolicy.id(), networkAdmins.id());
-        backend.assignPolicy(employeeReadOnlyPolicy.id(), humanResources.id());
         backend.assignPolicy(managePayPolicy.id(), humanResources.id());
     }
 
@@ -260,13 +273,7 @@ public class InMemoryBackendTest {
 
     @Test
     public void unAssignFromGroupShouldRemovePolicyAssignmentTransitively() {
-        final ImmutableGroup allEmployees = allEmployees();
         final Group networkAdmins = networkAdmins();
-        backend.createGroup(allEmployees);
-        final Policy employeeReadOnlyPolicy = employeeReadOnlyPolicy();
-        backend.createPolicy(employeeReadOnlyPolicy);
-        backend.assignPolicy(employeeReadOnlyPolicy.id(), allEmployees.id());
-        backend.assignPrincipalToGroup(allEmployees.id(), networkAdmins.id(), true);
         final String joe = "joe";
         backend.assignPrincipalToGroup(networkAdmins.id(), joe);
         final List<String> policyIds = backend.resolvePolicyIdsForPrincipal(joe);

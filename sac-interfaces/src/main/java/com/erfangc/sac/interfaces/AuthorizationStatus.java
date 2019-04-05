@@ -1,4 +1,4 @@
-package com.erfangc.sac.core;
+package com.erfangc.sac.interfaces;
 
 public enum AuthorizationStatus {
     Permitted,

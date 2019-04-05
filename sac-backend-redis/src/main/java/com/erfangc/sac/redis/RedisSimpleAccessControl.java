@@ -1,10 +1,10 @@
 package com.erfangc.sac.redis;
 
 import com.erfangc.sac.backend.redis.RedisBackend;
-import com.erfangc.sac.core.*;
 import com.erfangc.sac.core.backend.Backend;
 import com.erfangc.sac.core.service.SimpleAccessControl;
 import com.erfangc.sac.core.service.SimpleAccessControlImpl;
+import com.erfangc.sac.interfaces.*;
 
 import java.io.Closeable;
 import java.util.List;
@@ -14,6 +14,17 @@ public class RedisSimpleAccessControl implements SimpleAccessControl, Closeable 
     private static final String endpoint = System.getProperty("sac.redis.endpoint", "localhost");
 
     private static RedisSimpleAccessControl ourInstance = new RedisSimpleAccessControl();
+    private final Backend backend;
+    private final SimpleAccessControl delegate;
+
+    private RedisSimpleAccessControl() {
+        backend = new RedisBackend(endpoint);
+        delegate = new SimpleAccessControlImpl(backend);
+    }
+
+    public static RedisSimpleAccessControl getInstance() {
+        return ourInstance;
+    }
 
     @Override
     public void createGroup(Group group) {
@@ -98,18 +109,6 @@ public class RedisSimpleAccessControl implements SimpleAccessControl, Closeable 
     @Override
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         return delegate.authorize(request);
-    }
-
-    public static RedisSimpleAccessControl getInstance() {
-        return ourInstance;
-    }
-
-    private final Backend backend;
-    private final SimpleAccessControl delegate;
-
-    private RedisSimpleAccessControl() {
-        backend = new RedisBackend(endpoint);
-        delegate = new SimpleAccessControlImpl(backend);
     }
 
     @Override

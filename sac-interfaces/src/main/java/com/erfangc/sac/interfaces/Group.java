@@ -1,4 +1,4 @@
-package com.erfangc.sac.core;
+package com.erfangc.sac.interfaces;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

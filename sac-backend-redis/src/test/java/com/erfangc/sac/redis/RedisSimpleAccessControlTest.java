@@ -1,7 +1,7 @@
 package com.erfangc.sac.redis;
 
-import com.erfangc.sac.core.*;
-import com.erfangc.sac.core.service.SimpleAccessControl;
+import com.erfangc.sac.backend.tests.BackendTestBase;
+import com.erfangc.sac.interfaces.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,13 +11,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 
-public class RedisSimpleAccessControlTest {
-
-    private SimpleAccessControl sac;
+public class RedisSimpleAccessControlTest extends BackendTestBase {
     private RedisServer redisServer;
 
     @After
@@ -32,71 +29,7 @@ public class RedisSimpleAccessControlTest {
         redisServer.start();
         System.setProperty("sac.redis.endpoint", "localhost:8080");
         sac = RedisSimpleAccessControl.getInstance();
-        final Group networkAdmins = networkAdmins();
-        sac.createGroup(networkAdmins);
-        final Group humanResources = humanResources();
-        sac.createGroup(humanResources);
-        final Policy employeeReadOnlyPolicy = employeeReadOnlyPolicy();
-        sac.createPolicy(employeeReadOnlyPolicy);
-        final Policy serverLoginPolicy = serverLoginPolicy();
-        sac.createPolicy(serverLoginPolicy);
-        final Policy managePayPolicy = managePayPolicy();
-        sac.createPolicy(managePayPolicy);
-        sac.assignPolicy(employeeReadOnlyPolicy.id(), networkAdmins.id());
-        sac.assignPolicy(serverLoginPolicy.id(), networkAdmins.id());
-        sac.assignPolicy(employeeReadOnlyPolicy.id(), humanResources.id());
-        sac.assignPolicy(managePayPolicy.id(), humanResources.id());
-    }
-
-    private ImmutableGroup allEmployees() {
-        return ImmutableGroup.
-                builder()
-                .id("all employees")
-                .name("All Employees")
-                .build();
-    }
-
-    private Policy managePayPolicy() {
-        return ImmutablePolicy
-                .builder()
-                .id("manage pay")
-                .actions(asList("increase", "decrease"))
-                .resource("/org/employees/*/pay")
-                .build();
-    }
-
-    private Policy serverLoginPolicy() {
-        return ImmutablePolicy
-                .builder()
-                .id("server login")
-                .actions(singletonList("login"))
-                .resource("/org/servers/*")
-                .build();
-    }
-
-    private Policy employeeReadOnlyPolicy() {
-        return ImmutablePolicy
-                .builder()
-                .id("employee read only")
-                .actions(singletonList("read"))
-                .resource("/org/employees/*")
-                .build();
-    }
-
-    private Group humanResources() {
-        return ImmutableGroup
-                .builder()
-                .name("Human Resources")
-                .id("hr")
-                .build();
-    }
-
-    private Group networkAdmins() {
-        return ImmutableGroup
-                .builder()
-                .name("Network Administrators")
-                .id("network admins")
-                .build();
+        initializePolicyBackendStates();
     }
 
     @Test
@@ -255,19 +188,10 @@ public class RedisSimpleAccessControlTest {
     public void authorizeActionsTransitively() {
         final Group humanResources = humanResources();
         final Group networkAdmins = networkAdmins();
-        final ImmutableGroup allEmployees = allEmployees();
-        sac.createGroup(allEmployees);
-        sac.assignPrincipalToGroup(allEmployees.id(), humanResources.id(), true);
-        sac.assignPrincipalToGroup(allEmployees.id(), networkAdmins.id(), true);
         final String hrGuy = "hr guy";
         final String itGuy = "it guy";
         sac.assignPrincipalToGroup(humanResources.id(), hrGuy);
         sac.assignPrincipalToGroup(networkAdmins.id(), itGuy);
-
-        final Policy employeeReadOnlyPolicy = employeeReadOnlyPolicy();
-        sac.createPolicy(employeeReadOnlyPolicy);
-        sac.assignPolicy(employeeReadOnlyPolicy.id(), allEmployees.id());
-
         // both itGuy and hrGuy should be able to access an employee record
         final ImmutableAuthorizationRequest authorizationRequest = ImmutableAuthorizationRequest
                 .builder()

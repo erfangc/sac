@@ -1,8 +1,9 @@
 package com.erfangc.sac.core.backend;
 
-import com.erfangc.sac.core.Group;
-import com.erfangc.sac.core.Node;
-import com.erfangc.sac.core.Policy;
+
+import com.erfangc.sac.interfaces.Group;
+import com.erfangc.sac.interfaces.Node;
+import com.erfangc.sac.interfaces.Policy;
 
 import java.util.List;
 

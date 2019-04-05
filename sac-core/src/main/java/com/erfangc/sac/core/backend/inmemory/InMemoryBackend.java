@@ -1,7 +1,7 @@
 package com.erfangc.sac.core.backend.inmemory;
 
-import com.erfangc.sac.core.*;
 import com.erfangc.sac.core.backend.Backend;
+import com.erfangc.sac.interfaces.*;
 
 import java.util.*;
 

@@ -1,7 +1,7 @@
 package com.erfangc.sac.backend.redis;
 
-import com.erfangc.sac.core.*;
 import com.erfangc.sac.core.backend.Backend;
+import com.erfangc.sac.interfaces.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.lettuce.core.RedisClient;
@@ -80,8 +80,12 @@ public class RedisBackend implements Backend, Closeable {
     @Override
     public void createGroup(Group group) {
         final String json;
+        // we do not persist group memberships de-normalized
+        // since the data structure is normalized for look up efficiency
         try {
-            json = objectMapper.writeValueAsString(group);
+            json = objectMapper.writeValueAsString(
+                    ImmutableGroup.copyOf(group).withAssignments(Collections.emptyList())
+            );
             sync.set(GROUP + group.id(), json);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
@@ -137,7 +141,7 @@ public class RedisBackend implements Backend, Closeable {
     public void assignPrincipalToGroup(String groupId, String principalId, boolean principalIsGroup) {
         sync.sadd(GROUP_TO_PRINCIPAL_MAP + groupId, principalId);
         if (principalIsGroup) {
-            sync.sadd(GROUP_TO_GROUP_MAP + groupId, principalId);
+            sync.sadd(GROUP_TO_GROUP_MAP + principalId, groupId);
         } else {
             sync.sadd(PRINCIPAL_TO_GROUP_MAP + principalId, groupId);
         }
@@ -170,7 +174,7 @@ public class RedisBackend implements Backend, Closeable {
         while (!stack.isEmpty()) {
             final Node node = stack.pop();
             seen.add(node.getName());
-            for (String childGid : sync.smembers(GROUP_TO_GROUP_MAP + node.getName())) {
+            for (String childGid : sync.smembers(GROUP_TO_PRINCIPAL_MAP + node.getName())) {
                 if (!seen.contains(childGid)) {
                     Node childNode = new Node().setName(childGid).setChildren(new ArrayList<>());
                     node.getChildren().add(childNode);
