@@ -1,7 +1,6 @@
 package com.erfangc.sac.core.service;
 
 import com.erfangc.sac.core.*;
-import com.erfangc.sac.core.backend.inmemory.InMemoryBackend;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,11 +13,11 @@ import static org.junit.Assert.*;
 
 public class SimpleAccessControlImplTest {
 
-    private SimpleAccessControlImpl sac;
+    private SimpleAccessControl sac;
 
     @Before
     public void setUp() {
-        sac = new SimpleAccessControlImpl(new InMemoryBackend());
+        sac = InMemorySimpleAccessControl.getInstance();
         final Group networkAdmins = networkAdmins();
         sac.createGroup(networkAdmins);
         final Group humanResources = humanResources();
