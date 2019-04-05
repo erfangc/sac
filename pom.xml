@@ -8,8 +8,6 @@
     <artifactId>sac</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>sac</name>
-
     <name>Simple Access Control</name>
     <description>A modern portable authorization library</description>
 
