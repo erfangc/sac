@@ -3,7 +3,6 @@ package com.erfangc.sac.core.backend;
 import com.erfangc.sac.core.Group;
 import com.erfangc.sac.core.Node;
 import com.erfangc.sac.core.Policy;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.util.List;
 
@@ -13,7 +12,7 @@ public interface Backend {
 
     List<Policy> loadPolicies(List<String> policyIds);
 
-    void createGroup(Group group) ;
+    void createGroup(Group group);
 
     Group getGroup(String id);
 

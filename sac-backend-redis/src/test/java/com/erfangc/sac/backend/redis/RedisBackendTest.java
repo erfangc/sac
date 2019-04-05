@@ -29,9 +29,9 @@ public class RedisBackendTest {
 
     @Before
     public void setUp() throws IOException {
-        redisServer = new RedisServer(6379);
+        redisServer = new RedisServer(8080);
         redisServer.start();
-        backend = new RedisBackend("localhost");
+        backend = new RedisBackend("localhost:8080");
         final Group networkAdmins = networkAdmins();
         backend.createGroup(networkAdmins);
         final Group humanResources = humanResources();
