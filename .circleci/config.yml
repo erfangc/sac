@@ -1,7 +1,5 @@
 # Java Maven CircleCI 2.0 configuration file
 version: 2
-orbs:
-  codecov: codecov/codecov@1.0.2
 jobs:
   build:
     docker:
@@ -32,5 +30,4 @@ jobs:
       # run tests!
       - run: mvn test
 
-      - codecov/upload:
-          file: sac-core/target/my-reports/jacoco.xml
+      - run: bash <(curl -s https://codecov.io/bash)
