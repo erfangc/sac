@@ -13,15 +13,13 @@ public class RedisSimpleAccessControlTest extends BackendTestBase {
     @After
     public void tearDown() {
         redisServer.stop();
-        System.clearProperty("sac.redis.endpoint");
     }
 
     @Before
     public void setUp() throws IOException {
         redisServer = new RedisServer(8080);
         redisServer.start();
-        System.setProperty("sac.redis.endpoint", "localhost:8080");
-        sac = RedisSimpleAccessControl.getInstance();
+        sac = new RedisSimpleAccessControl("localhost:8080");
         initializePolicyBackendStates();
     }
 

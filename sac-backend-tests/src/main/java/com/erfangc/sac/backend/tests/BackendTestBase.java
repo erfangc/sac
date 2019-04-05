@@ -14,7 +14,7 @@ public class BackendTestBase {
 
     protected SimpleAccessControl sac;
 
-    protected Group allEmployees() {
+    private Group allEmployees() {
         return ImmutableGroup.
                 builder()
                 .id("all employees")
@@ -22,7 +22,7 @@ public class BackendTestBase {
                 .build();
     }
 
-    protected Policy managePayPolicy() {
+    private Policy managePayPolicy() {
         return ImmutablePolicy
                 .builder()
                 .id("manage pay")
@@ -31,7 +31,7 @@ public class BackendTestBase {
                 .build();
     }
 
-    protected Policy serverLoginPolicy() {
+    private Policy serverLoginPolicy() {
         return ImmutablePolicy
                 .builder()
                 .id("server login")
@@ -40,7 +40,7 @@ public class BackendTestBase {
                 .build();
     }
 
-    protected Policy employeeReadOnlyPolicy() {
+    private Policy employeeReadOnlyPolicy() {
         return ImmutablePolicy
                 .builder()
                 .id("employee read only")
@@ -49,7 +49,7 @@ public class BackendTestBase {
                 .build();
     }
 
-    protected Group humanResources() {
+    private Group humanResources() {
         return ImmutableGroup
                 .builder()
                 .name("Human Resources")
@@ -57,7 +57,7 @@ public class BackendTestBase {
                 .build();
     }
 
-    protected Group networkAdmins() {
+    private Group networkAdmins() {
         return ImmutableGroup
                 .builder()
                 .name("Network Administrators")
@@ -154,6 +154,29 @@ public class BackendTestBase {
     }
 
     @Test
+    public void unassignPolicy() {
+        final Group networkAdmins = networkAdmins();
+        sac.assignPrincipalToGroup(networkAdmins.id(), "john");
+        final ImmutableAuthorizationRequest request = ImmutableAuthorizationRequest
+                .builder()
+                .id("abc")
+                .action("login")
+                .resource("/org/servers/server1")
+                .principal("john")
+                .build();
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request).status());
+        sac.unAssignPolicy(serverLoginPolicy().id(), networkAdmins.id());
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+    }
+
+    @Test
+    public void getGroupTree() {
+        final Node root = sac.getGroupTree(allEmployees().id());
+        assertNotNull(root);
+        assertEquals(2, root.getChildren().size());
+    }
+
+    @Test
     public void getAllPrincipalsForGroup() {
         final Group group = networkAdmins();
         sac.assignPrincipalToGroup(group.id(), "john");
@@ -241,6 +264,22 @@ public class BackendTestBase {
         // itGuy shouldn't be able to manage pay either
         final AuthorizationResponse authorizationResponse2 = sac.authorize(authorizationRequest.withPrincipal(itGuy));
         assertEquals(AuthorizationStatus.Denied, authorizationResponse2.status());
+    }
+
+    @Test
+    public void authorizeWithDirectlyAssignedPolicy() {
+        final String hrGuy = "hr guy";
+        // both itGuy and hrGuy should be able to access an employee record
+        final ImmutableAuthorizationRequest authorizationRequest = ImmutableAuthorizationRequest
+                .builder()
+                .id("test request")
+                .action("login")
+                .principal(hrGuy)
+                .resource("/org/servers/server1")
+                .build();
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(authorizationRequest).status());
+        sac.assignPolicy(serverLoginPolicy().id(), hrGuy);
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(authorizationRequest).status());
     }
 
     @Test

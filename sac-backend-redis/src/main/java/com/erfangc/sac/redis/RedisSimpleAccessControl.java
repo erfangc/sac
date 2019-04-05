@@ -2,7 +2,6 @@ package com.erfangc.sac.redis;
 
 import com.erfangc.sac.backend.redis.RedisBackend;
 import com.erfangc.sac.core.backend.Backend;
-import com.erfangc.sac.interfaces.SimpleAccessControl;
 import com.erfangc.sac.core.service.SimpleAccessControlImpl;
 import com.erfangc.sac.interfaces.*;
 
@@ -13,17 +12,12 @@ public class RedisSimpleAccessControl implements SimpleAccessControl, Closeable 
 
     private static final String endpoint = System.getProperty("sac.redis.endpoint", "localhost");
 
-    private static RedisSimpleAccessControl ourInstance = new RedisSimpleAccessControl();
     private final Backend backend;
     private final SimpleAccessControl delegate;
 
-    private RedisSimpleAccessControl() {
-        backend = new RedisBackend(endpoint);
+    public RedisSimpleAccessControl(String redisEndpoint) {
+        backend = new RedisBackend(redisEndpoint == null ? endpoint : redisEndpoint);
         delegate = new SimpleAccessControlImpl(backend);
-    }
-
-    public static RedisSimpleAccessControl getInstance() {
-        return ourInstance;
     }
 
     @Override
