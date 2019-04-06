@@ -14,9 +14,11 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
-public class RedisIdentityPolicyManager implements Backend, Closeable {
+public class RedisBackend implements Backend, Closeable {
 
     private static final String PRINCIPAL_TO_POLICY_MAP = "PRINCIPAL_TO_POLICY_MAP:";
+    private static final String RESOURCE_POLICY_MAP = "RESOURCE_POLICY_MAP:";
+    private static final String RESOURCE_POLICY_PRINCIPAL_TO_ACTIONS_MAP = "RESOURCE_POLICY_PRINCIPAL_TO_ACTIONS_MAP:";
     private static final String POLICY_TO_PRINCIPAL_MAP = "POLICY_TO_PRINCIPAL_MAP:";
     private static final String PRINCIPAL_TO_GROUP_MAP = "PRINCIPAL_TO_GROUP_MAP:";
     private static final String GROUP_TO_PRINCIPAL_MAP = "GROUP_TO_PRINCIPAL_MAP:";
@@ -27,7 +29,7 @@ public class RedisIdentityPolicyManager implements Backend, Closeable {
     private final RedisCommands<String, String> sync;
     private final ObjectMapper objectMapper;
 
-    public RedisIdentityPolicyManager(String serverEndpoint) {
+    public RedisBackend(String serverEndpoint) {
         client = RedisClient.create("redis://" + serverEndpoint);
         sync = client.connect().sync();
         objectMapper = new ObjectMapper().findAndRegisterModules();
@@ -246,5 +248,44 @@ public class RedisIdentityPolicyManager implements Backend, Closeable {
     public List<IdentityPolicy> fetchIdentityPoliciesTransitivelyForPrincipal(String principalId) {
         final List<String> policyIds = resolvePolicyIdsForPrincipal(principalId);
         return loadPolicies(policyIds);
+    }
+
+    @Override
+    public void grantActions(String resource, String principal, Set<String> actions) {
+        sync.sadd(RESOURCE_POLICY_PRINCIPAL_TO_ACTIONS_MAP + resource + ":" + principal, actions.toArray(new String[0]));
+        sync.sadd(RESOURCE_POLICY_MAP + resource, principal);
+    }
+
+    @Override
+    public void revokeActions(String resource, String principal, Set<String> actions) {
+        // TODO make this a transaction & resilient against simple race conditions
+        final Set<String> exisit = sync.smembers(RESOURCE_POLICY_PRINCIPAL_TO_ACTIONS_MAP + resource + ":" + principal);
+        sync.srem(RESOURCE_POLICY_PRINCIPAL_TO_ACTIONS_MAP + resource + ":" + principal, actions.toArray(new String[0]));
+        exisit.removeAll(actions);
+        if (exisit.isEmpty()) {
+            sync.srem(RESOURCE_POLICY_MAP + resource, principal);
+        }
+    }
+
+    @Override
+    public ResourcePolicy getResourcePolicy(String resource) {
+        final Set<String> principals = sync.smembers(RESOURCE_POLICY_MAP + resource);
+        if (principals != null && !principals.isEmpty()) {
+            final List<ResourcePolicyAssignment> assignments = principals
+                    .stream()
+                    .map(principal -> ImmutableResourcePolicyAssignment
+                            .builder()
+                            .actions(sync.smembers(RESOURCE_POLICY_PRINCIPAL_TO_ACTIONS_MAP + resource + ":" + principal))
+                            .principal(principal)
+                            .build()
+                    )
+                    .collect(toList());
+            return ImmutableResourcePolicy
+                    .builder()
+                    .assignments(assignments)
+                    .resource(resource)
+                    .build();
+        }
+        return null;
     }
 }

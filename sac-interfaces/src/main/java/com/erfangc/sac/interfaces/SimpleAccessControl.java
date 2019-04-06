@@ -1,6 +1,7 @@
 package com.erfangc.sac.interfaces;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * The main interface for performing access control functions
@@ -136,5 +137,31 @@ public interface SimpleAccessControl {
      * @return a {@link AuthorizationResponse}
      */
     AuthorizationResponse authorize(AuthorizationRequest request);
+
+    /**
+     * Grants the specified principal the set of specified actions against the given resource
+     *
+     * @param resource  the resource to grant access to
+     * @param principal the principal who should be granted access
+     * @param actions   the actions that the principal should be granted access to perform against the specified resource
+     */
+    void grantActions(String resource, String principal, Set<String> actions);
+
+    /**
+     * Revokes the specified principal from performing the set of specified actions against the given resource
+     *
+     * @param resource  the resource to revoke access to
+     * @param principal the principal whose access to the resource should be revoked
+     * @param actions   the actions that the principal should no longer be able to perform against the specified resource
+     */
+    void revokeActions(String resource, String principal, Set<String> actions);
+
+    /**
+     * Retrieve all policies associated with the given resource
+     *
+     * @param resource the resource identifier
+     * @return a {@link ResourcePolicy}
+     */
+    ResourcePolicy getResourcePolicy(String resource);
 
 }

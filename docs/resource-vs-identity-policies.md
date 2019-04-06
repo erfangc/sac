@@ -22,18 +22,14 @@ A resource based policy is uniquely identified by the resource and has the follo
 resource: "/org/inventory/widgets/widget1"
 description: optional description
 assignments:
-- principals:
-  - production team
-  - manufacturing team
+- principal: manufacturing team
   actions:
   - produce
   - repair
-- principals:
-  - logistic team
+- principal: logistic team
   actions:
   - ship
-- principals:
-  - sales team
+- principal: sales team
   actions:
   - order bulk
 ```

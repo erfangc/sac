@@ -3,10 +3,13 @@ package com.erfangc.sac.backend.tests;
 import com.erfangc.sac.interfaces.*;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 
@@ -280,6 +283,144 @@ public class BackendTestBase {
         assertEquals(AuthorizationStatus.Denied, sac.authorize(authorizationRequest).status());
         sac.assignPolicy(serverLoginPolicy().id(), hrGuy);
         assertEquals(AuthorizationStatus.Permitted, sac.authorize(authorizationRequest).status());
+    }
+
+    @Test
+    public void authorizeAgainstResourcePolicy() {
+        String hrGuy = "hr guy";
+        final ImmutableAuthorizationRequest request = ImmutableAuthorizationRequest
+                .builder()
+                .id("test request")
+                .action("read")
+                .resource("/books/book1")
+                .principal(hrGuy)
+                .build();
+        final Group humanResources = humanResources();
+        sac.assignPrincipalToGroup(humanResources.id(), hrGuy);
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+
+        sac.grantActions("/books/book1", hrGuy, singleton("read"));
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request).status());
+
+        sac.revokeActions("/books/book1", hrGuy, singleton("read"));
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+    }
+
+    @Test
+    public void authorizeAgainstResourcePolicyMultiActions() {
+        String hrGuy = "hr guy";
+        final ImmutableAuthorizationRequest request = ImmutableAuthorizationRequest
+                .builder()
+                .id("test request")
+                .action("write")
+                .resource("/books/book1")
+                .principal(hrGuy)
+                .build();
+        final Group humanResources = humanResources();
+        sac.assignPrincipalToGroup(humanResources.id(), hrGuy);
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+
+        Set<String> actions = readAndWrite();
+        sac.grantActions("/books/book1", hrGuy, actions);
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request).status());
+
+        sac.revokeActions("/books/book1", hrGuy, singleton("write"));
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request.withAction("read")).status());
+    }
+
+    @Test
+    public void authorizeAgainstResourcePolicyMultiPrincipals() {
+        final Group humanResources = humanResources();
+        final Group networkAdmins = networkAdmins();
+        String hrGuy = "hr guy";
+        String itGuy = "it guy";
+
+        Set<String> actions = readAndWrite();
+
+        final ImmutableAuthorizationRequest request = ImmutableAuthorizationRequest
+                .builder()
+                .id("test request")
+                .action("write")
+                .resource("/books/book1")
+                .principal(hrGuy)
+                .build();
+
+        sac.assignPrincipalToGroup(humanResources.id(), hrGuy);
+        sac.assignPrincipalToGroup(networkAdmins.id(), itGuy);
+
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request.withPrincipal(itGuy)).status());
+
+        sac.grantActions("/books/book1", hrGuy, actions);
+        sac.grantActions("/books/book1", itGuy, actions);
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request).status());
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request.withPrincipal(itGuy)).status());
+
+        sac.revokeActions("/books/book1", hrGuy, singleton("write"));
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request.withPrincipal(itGuy)).status());
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request.withAction("read")).status());
+    }
+
+    @Test
+    public void authorizeAgainstResourcePolicyUsingGroups() {
+        final Group humanResources = humanResources();
+        String hrGuy = "hr guy";
+
+        Set<String> actions = readAndWrite();
+
+        final ImmutableAuthorizationRequest request = ImmutableAuthorizationRequest
+                .builder()
+                .id("test request")
+                .action("write")
+                .resource("/books/book1")
+                .principal(hrGuy)
+                .build();
+
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+        sac.assignPrincipalToGroup(humanResources.id(), hrGuy);
+
+        sac.grantActions("/books/book1", humanResources.id(), actions);
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request).status());
+
+        sac.revokeActions("/books/book1", humanResources.id(), singleton("write"));
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request.withAction("read")).status());
+    }
+
+    @Test
+    public void authorizeAgainstResourcePolicyUsingGroupsTransitively() {
+        final Group humanResources = humanResources();
+        final Group allEmployees = allEmployees();
+        String hrGuy = "hr guy";
+        sac.assignPrincipalToGroup(humanResources.id(), hrGuy);
+
+        Set<String> actions = readAndWrite();
+
+        final ImmutableAuthorizationRequest request = ImmutableAuthorizationRequest
+                .builder()
+                .id("test request")
+                .action("write")
+                .resource("/books/book1")
+                .principal(hrGuy)
+                .build();
+
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+
+        sac.grantActions("/books/book1", allEmployees.id(), actions);
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request).status());
+
+        sac.revokeActions("/books/book1", allEmployees.id(), singleton("write"));
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request.withAction("read")).status());
+    }
+
+    private Set<String> readAndWrite() {
+        Set<String> actions = new HashSet<>();
+        actions.add("write");
+        actions.add("read");
+        return actions;
     }
 
     @Test

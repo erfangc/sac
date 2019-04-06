@@ -5,10 +5,11 @@ import com.erfangc.sac.interfaces.*;
 
 import java.util.*;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toCollection;
 
-public class InMemoryIdentityPolicyManager implements Backend {
+public class InMemoryBackend implements Backend {
 
     private Map<String, Group> groups;
     private Map<String, IdentityPolicy> policies;
@@ -18,8 +19,9 @@ public class InMemoryIdentityPolicyManager implements Backend {
     private Map<String, Map<String, Group>> principalToGroupMap;
     private Map<String, Map<String, String>> policyToPrincipalMap;
     private Map<String, Map<String, IdentityPolicy>> principalToPolicyMap;
+    private Map<String, ImmutableResourcePolicy> resourcePolicyMap;
 
-    public InMemoryIdentityPolicyManager() {
+    public InMemoryBackend() {
         policies = new HashMap<>();
         groups = new HashMap<>();
         groupToGroupMap = new HashMap<>();
@@ -27,6 +29,16 @@ public class InMemoryIdentityPolicyManager implements Backend {
         principalToGroupMap = new HashMap<>();
         policyToPrincipalMap = new HashMap<>();
         principalToPolicyMap = new HashMap<>();
+        resourcePolicyMap = new HashMap<>();
+    }
+
+    private static ImmutableResourcePolicy newPolicy(String resource) {
+        return ImmutableResourcePolicy
+                .builder()
+                .resource(resource)
+                .description("Policy to protect " + resource)
+                .assignments(emptyList())
+                .build();
     }
 
     @Override
@@ -197,5 +209,54 @@ public class InMemoryIdentityPolicyManager implements Backend {
         final List<String> gids = getGroupMembershipTransitively(principalId);
         gids.forEach(gid -> ret.addAll(new ArrayList<>(principalToPolicyMap.getOrDefault(gid, emptyMap()).values())));
         return new ArrayList<>(ret);
+    }
+
+    @Override
+    public synchronized void grantActions(String resource, String principal, Set<String> actions) {
+        final ImmutableResourcePolicy policy = resourcePolicyMap.getOrDefault(resource, newPolicy(resource));
+        // for each attached assignment, determine if the principal is already granted the actions
+        final List<ResourcePolicyAssignment> resourcePolicyAssignments = policy.assignments().orElse(new ArrayList<>());
+        boolean found = false;
+        List<ResourcePolicyAssignment> results = new ArrayList<>();
+        for (ResourcePolicyAssignment assignment : resourcePolicyAssignments) {
+            if (assignment.principal().equals(principal)) {
+                final Set<String> union = new HashSet<>(assignment.actions());
+                union.addAll(actions);
+                ImmutableResourcePolicyAssignment updated = ImmutableResourcePolicyAssignment
+                        .copyOf(assignment)
+                        .withActions(union);
+                results.add(updated);
+                found = true;
+            } else {
+                results.add(assignment);
+            }
+        }
+        if (!found) {
+            results.add(ImmutableResourcePolicyAssignment.builder().actions(actions).principal(principal).build());
+        }
+        resourcePolicyMap.put(resource, policy.withAssignments(results));
+    }
+
+    @Override
+    public synchronized void revokeActions(String resource, String principal, Set<String> actions) {
+        final ImmutableResourcePolicy policy = resourcePolicyMap.getOrDefault(resource, newPolicy(resource));
+        // for each attached assignment, determine if the principal is already granted the actions
+        final List<ResourcePolicyAssignment> resourcePolicyAssignments = policy.assignments().orElse(new ArrayList<>());
+        List<ResourcePolicyAssignment> results = new ArrayList<>();
+        for (ResourcePolicyAssignment assignment : resourcePolicyAssignments) {
+            if (assignment.principal().equals(principal)) {
+                final HashSet<String> removed = new HashSet<>(assignment.actions());
+                removed.removeAll(actions);
+                results.add(ImmutableResourcePolicyAssignment.copyOf(assignment).withActions(removed));
+            } else {
+                results.add(assignment);
+            }
+        }
+        resourcePolicyMap.put(resource, policy.withAssignments(results));
+    }
+
+    @Override
+    public ResourcePolicy getResourcePolicy(String resource) {
+        return resourcePolicyMap.get(resource);
     }
 }

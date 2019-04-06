@@ -10,7 +10,7 @@ import java.util.List;
 @JsonSerialize(as = ImmutableResourcePolicyAssignment.class)
 @JsonDeserialize(builder = ImmutableResourcePolicyAssignment.Builder.class)
 public interface ResourcePolicyAssignment {
-    List<String> principals();
+    String principal();
 
     List<String> actions();
 }

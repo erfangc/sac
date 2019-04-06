@@ -1,20 +1,22 @@
 package com.erfangc.sac.core.service;
 
-import com.erfangc.sac.core.backend.inmemory.InMemoryIdentityPolicyManager;
+import com.erfangc.sac.core.backend.inmemory.InMemoryBackend;
 import com.erfangc.sac.interfaces.*;
 
 import java.util.List;
+import java.util.Set;
 
 public class InMemorySimpleAccessControl implements SimpleAccessControl {
-    private static InMemorySimpleAccessControl ourInstance = new InMemorySimpleAccessControl();
+
+    private static InMemorySimpleAccessControl instance = new InMemorySimpleAccessControl();
     private final SimpleAccessControlImpl delegate;
 
     private InMemorySimpleAccessControl() {
-        delegate = new SimpleAccessControlImpl(new InMemoryIdentityPolicyManager());
+        delegate = new SimpleAccessControlImpl(new InMemoryBackend());
     }
 
     public static synchronized InMemorySimpleAccessControl getInstance() {
-        return ourInstance;
+        return instance;
     }
 
     @Override
@@ -105,5 +107,20 @@ public class InMemorySimpleAccessControl implements SimpleAccessControl {
     @Override
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         return delegate.authorize(request);
+    }
+
+    @Override
+    public void grantActions(String resource, String principal, Set<String> actions) {
+        delegate.grantActions(resource, principal, actions);
+    }
+
+    @Override
+    public void revokeActions(String resource, String principal, Set<String> actions) {
+        delegate.revokeActions(resource, principal, actions);
+    }
+
+    @Override
+    public ResourcePolicy getResourcePolicy(String resource) {
+        return null;
     }
 }

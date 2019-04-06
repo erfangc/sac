@@ -4,6 +4,7 @@ import com.erfangc.sac.core.backend.Backend;
 import com.erfangc.sac.interfaces.*;
 
 import java.util.List;
+import java.util.Set;
 
 public class SimpleAccessControlImpl implements SimpleAccessControl {
 
@@ -102,7 +103,50 @@ public class SimpleAccessControlImpl implements SimpleAccessControl {
 
     @Override
     public AuthorizationResponse authorize(AuthorizationRequest request) {
-        final List<IdentityPolicy> policies = backend.fetchIdentityPoliciesTransitivelyForPrincipal(request.principal());
+        final String principal = request.principal();
+
+        final ResourcePolicy resourcePolicy = backend.getResourcePolicy(request.resource());
+        // short circuit the process if permission is already granted through the resource policy
+        // attached to the given resource
+        if (resourcePolicy != null) {
+            final List<String> gids = backend.getGroupMembershipTransitively(request.principal());
+            final Boolean resourcePolicyPermitted = resourcePolicy.assignments().map(assignments -> {
+                boolean permitted = false;
+                for (ResourcePolicyAssignment assignment : assignments) {
+                    if ((gids.contains(assignment.principal()) || assignment.principal().equals(principal))
+                            && (assignment.actions().contains(request.action()))) {
+                        permitted = true;
+                    }
+                }
+                return permitted;
+            }).orElse(false);
+            if (resourcePolicyPermitted) {
+                return ImmutableAuthorizationResponse
+                        .builder()
+                        .requestId(request.id())
+                        .status(AuthorizationStatus.Permitted)
+                        .remarks("Permitted based on resource based policy")
+                        .build();
+            }
+        }
+
+        // otherwise proceed as normal
+        final List<IdentityPolicy> policies = backend.fetchIdentityPoliciesTransitivelyForPrincipal(principal);
         return policyDecisionMaker.makeAccessDecision(request, policies);
+    }
+
+    @Override
+    public void grantActions(String resource, String principal, Set<String> actions) {
+        backend.grantActions(resource, principal, actions);
+    }
+
+    @Override
+    public void revokeActions(String resource, String principal, Set<String> actions) {
+        backend.revokeActions(resource, principal, actions);
+    }
+
+    @Override
+    public ResourcePolicy getResourcePolicy(String resource) {
+        return backend.getResourcePolicy(resource);
     }
 }

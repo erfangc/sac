@@ -1,12 +1,13 @@
 package com.erfangc.sac.redis;
 
-import com.erfangc.sac.backend.redis.RedisIdentityPolicyManager;
+import com.erfangc.sac.backend.redis.RedisBackend;
 import com.erfangc.sac.core.backend.Backend;
 import com.erfangc.sac.core.service.SimpleAccessControlImpl;
 import com.erfangc.sac.interfaces.*;
 
 import java.io.Closeable;
 import java.util.List;
+import java.util.Set;
 
 public class RedisSimpleAccessControl implements SimpleAccessControl, Closeable {
 
@@ -16,7 +17,7 @@ public class RedisSimpleAccessControl implements SimpleAccessControl, Closeable 
     private final SimpleAccessControl delegate;
 
     public RedisSimpleAccessControl(String redisEndpoint) {
-        backend = new RedisIdentityPolicyManager(redisEndpoint == null ? endpoint : redisEndpoint);
+        backend = new RedisBackend(redisEndpoint == null ? endpoint : redisEndpoint);
         delegate = new SimpleAccessControlImpl(backend);
     }
 
@@ -111,7 +112,22 @@ public class RedisSimpleAccessControl implements SimpleAccessControl, Closeable 
     }
 
     @Override
+    public void grantActions(String resource, String principal, Set<String> actions) {
+        backend.grantActions(resource, principal, actions);
+    }
+
+    @Override
+    public void revokeActions(String resource, String principal, Set<String> actions) {
+        backend.revokeActions(resource, principal, actions);
+    }
+
+    @Override
+    public ResourcePolicy getResourcePolicy(String resource) {
+        return backend.getResourcePolicy(resource);
+    }
+
+    @Override
     public void close() {
-        ((RedisIdentityPolicyManager) backend).close();
+        ((RedisBackend) backend).close();
     }
 }
