@@ -1,6 +1,6 @@
 package com.erfangc.sac.redis;
 
-import com.erfangc.sac.backend.redis.RedisBackend;
+import com.erfangc.sac.backend.redis.RedisIdentityPolicyManager;
 import com.erfangc.sac.core.backend.Backend;
 import com.erfangc.sac.core.service.SimpleAccessControlImpl;
 import com.erfangc.sac.interfaces.*;
@@ -16,7 +16,7 @@ public class RedisSimpleAccessControl implements SimpleAccessControl, Closeable 
     private final SimpleAccessControl delegate;
 
     public RedisSimpleAccessControl(String redisEndpoint) {
-        backend = new RedisBackend(redisEndpoint == null ? endpoint : redisEndpoint);
+        backend = new RedisIdentityPolicyManager(redisEndpoint == null ? endpoint : redisEndpoint);
         delegate = new SimpleAccessControlImpl(backend);
     }
 
@@ -66,23 +66,28 @@ public class RedisSimpleAccessControl implements SimpleAccessControl, Closeable 
     }
 
     @Override
+    public List<String> getGroupMembershipTransitively(String principalId) {
+        return delegate.getGroupMembershipTransitively(principalId);
+    }
+
+    @Override
     public Node getGroupTree(String groupId) {
         return delegate.getGroupTree(groupId);
     }
 
     @Override
-    public void createPolicy(Policy policy) {
-        delegate.createPolicy(policy);
+    public void createPolicy(IdentityPolicy identityPolicy) {
+        delegate.createPolicy(identityPolicy);
     }
 
     @Override
-    public Policy getPolicy(String policyId) {
+    public IdentityPolicy getPolicy(String policyId) {
         return delegate.getPolicy(policyId);
     }
 
     @Override
-    public void updatePolicy(Policy policy) {
-        delegate.updatePolicy(policy);
+    public void updatePolicy(IdentityPolicy identityPolicy) {
+        delegate.updatePolicy(identityPolicy);
     }
 
     @Override
@@ -107,6 +112,6 @@ public class RedisSimpleAccessControl implements SimpleAccessControl, Closeable 
 
     @Override
     public void close() {
-        ((RedisBackend) backend).close();
+        ((RedisIdentityPolicyManager) backend).close();
     }
 }

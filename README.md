@@ -2,7 +2,11 @@
 [![CircleCI](https://circleci.com/gh/erfangc/sac/tree/master.svg?style=svg)](https://circleci.com/gh/erfangc/sac/tree/master)
 [![codecov](https://codecov.io/gh/erfangc/sac/branch/master/graph/badge.svg)](https://codecov.io/gh/erfangc/sac)
 
-Simple Access Control (SAC) is a friendly and streamlined authorization library inspired by industry standards such as IAM, ABAC (Attribute Based Access Control) and RBAC (Role Based Access Control). SAC borrows philosophically from XACML but replaces its OASIS specification with a modern JSON/YAML representation. Much of the more esoteric aspects are also ignored at the present moment in favor of simplicity
+Simple Access Control (SAC) is a friendly and streamlined authorization library inspired by industry standards such as IAM, ABAC (Attribute Based Access Control) and RBAC (Role Based Access Control). SAC borrows philosophically from XACML but replaces its OASIS specification with a modern JSON/YAML representation. Much of the more esoteric aspects are also ignored at the present moment in favor of simplicity and common use
+
+## Difference from OAuth 2.0
+
+The reason I felt the need to create this library instead of relying on OAuth 2.0 is mostly because OAuth 2.0 is built to solve for different needs. OAuth 2.0 assumes users are the owner of resources. Users in OAuth grants permissions to applications to access their data. While this is definitely true in social networking websites, this paradigm is in stark contrast to many use cases in enterprise, where resources are "administered" by an authority and various users are entitled to work with a sub-set of all available resources on the system. In the latter context, granular access control must be possible for an organization to function properly. This granularity must be achieved through a DSL that is expressive enough to cover a wide range of use cases and resource sharing schemes that OAuth simply was not designed to accommodate.
 
 ## Main Concepts
 
@@ -18,11 +22,21 @@ Groups organize a collection of principals into a single entity. Authorization d
 
 ### Group Assignments
 
-A group assignment is a `principal`, `group` pair that denotes the inclusion of the principal to the group. Principals can be assigned to or unassigned from groups. For example if user `james` is removed from the `network admin` group then any permissions associated with `network admin` will be lost to `james` 
+A group assignment is a `principal`, `group` pair that denotes the inclusion of the principal to the group. Principals can be assigned to or unassigned from groups. For example if user `james` is removed from the `network admin` group then any permissions associated with `network admin` will be lost to `james`
+
+### Resource 
+
+A `resource` is any entity on your network you wish to protect, such as user credentials, shopping carts, investment portfolios etc. Resources are denoted using the [Universal Resource Locator (URL)](https://en.wikipedia.org/wiki/URL) format. You (the consumer of SAC) have the freedom to organize your resources according to whatever hierarchy you deem fit. For example if you are running an online shopping website, you may use the scheme `/shopping-carts/user-id/shopping-cart-1` to convey the fact that shopping carts are segregated by user id
+
+Note that resources are purely represented as strings and interpreted as `/` separated at runtime. SAC does not actually care if the resource exist on your systems or not, nor is SAC knowledgeable of the services that manage these resources. Further note that the URL hierarchy you use to describe and identify resources do not have to correspond to actual URLs you may ultimately expose in your RESTful APIs, though it is recommended that you keep them consistent
+
+Finally and to summarize: a `resource` is any protected entity represented as a string. A resource is organized and identified via the `/` character. Conventionally, a resource must be a noun
 
 ### Policy
 
-The `policy` is the primary object in SAC that describes authorization rules. A `policy` can be applied (assigned) to principals or groups. The `policy` defines the resources that the assigned principal have access to as well as the actions that principal is permitted to perform
+ >There are actually two flavors of policies: `ResourcePolicy` and `IdentityPolicy`. As a gentle introduction, please only consider `IdentityPolicy` for the rest of this README. The difference between the two types of policies are covered in [Resource vs identity policies](./docs/resource-vs-identity-policies.md).
+
+The `Policy` (also known as an `IdentityPolicy`) is the primary object in SAC that describes authorization rules. A `policy` can be applied (assigned) to principals or groups. Policies defines the resources that the assigned principal have access to as well as the actions that principal is permitted to perform
 
 Example policy to protect a single resource:
 ```yaml
@@ -49,14 +63,6 @@ actions:
   - sell
   - purge
 ```
-
-#### Resource
-
-A `resource` is any entity on your network you wish to protect, such as user credentials, shopping carts, investment portfolios etc. Resources are denoted using the [Universal Resource Locator (URL)](https://en.wikipedia.org/wiki/URL) format. You (the consumer of SAC) have the freedom to organize your resources according to whatever hierarchy you deem fit. For example if you are running an online shopping website, you may use the scheme `/shopping-carts/user-id/shopping-cart-1` to convey the fact that shopping carts are segregated by user id
-
-Note that resources are purely represented as strings and interpreted as `/` separated at runtime. SAC does not actually care if the resource exist on your systems or not, nor is SAC knowledgeable of the services that manage these resources. Further note that the URL hierarchy you use to describe and identify resources do not have to correspond to actual URLs you may ultimately expose in your RESTful APIs, though it is recommended that you keep them consistent
-
-Finally and to summarize: a `resource` is any protected entity represented as a string. A resource is organized and identified via the `/` character. Conventionally, a resource must be a noun
 
 #### Actions
 
@@ -86,7 +92,7 @@ Similar to `group assignment`, a `policy assignment` denote the applicability of
 
 ### Backends
 
-In order to use the core functionalities of the library. You should first choose an appropriate `Backend`, which handles persistence and lifecycle of the concepts illustrates above, namely: `Policy`, `Group` etc. The `Backend` exposes a specific set of methods that an given storage medium must be able tp implement and support
+In order to use the core functionalities of the library. You should first choose an appropriate `Backend`, which handles persistence and lifecycle of the concepts illustrates above, namely: `IdentityPolicy`, `ResourcePolicy`, `Group` etc. The `Backend` exposes a specific set of methods that an given storage medium must be able tp implement and support
 
 ```java
 SimpleAccessControl sac = new SimpleAccessControlImpl(myBackend);
@@ -179,7 +185,11 @@ Node root = sac.getGroupTree("my group");
 If `group1` is a member of `group2`, `group2` is a member of `group3` then neither `group1` or `group2` cannot be a a member of `group3` 
 
 ```
-group1 -> group2 -> group3 -> group1 [Not allowed]
+Assuming the setup:
+Group1 -> Group2 -> Group3
+Then the assignments:
+Group2 -> Group1 is not allowed
+Group2 -> Group3 is not allowed
 ```
 
 ### Managing Policies
@@ -187,7 +197,7 @@ group1 -> group2 -> group3 -> group1 [Not allowed]
 #### Creating / updating / deleting policies
 
 ```java
-final ImmutablePolicy policy = ImmutablePolicy
+final ImmutableIdentityPolicy policy = ImmutableIdentityPolicy
                 .builder()
                 .id("xyz")
                 .resource("/my-org/my-dept/my-resource")
@@ -271,6 +281,6 @@ The project is split into a few components for modularity. Each component is rep
 
  - Redis backend
  - Terraform templates
- - Resource based access control (i.e. bypass policy assignment scan)
+ - Resource based policies
  - Principal attribute forwarding in policies
  - Conditions in policies

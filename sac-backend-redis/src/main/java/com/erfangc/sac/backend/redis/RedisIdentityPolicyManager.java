@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
-public class RedisBackend implements Backend, Closeable {
+public class RedisIdentityPolicyManager implements Backend, Closeable {
 
     private static final String PRINCIPAL_TO_POLICY_MAP = "PRINCIPAL_TO_POLICY_MAP:";
     private static final String POLICY_TO_PRINCIPAL_MAP = "POLICY_TO_PRINCIPAL_MAP:";
@@ -27,37 +27,23 @@ public class RedisBackend implements Backend, Closeable {
     private final RedisCommands<String, String> sync;
     private final ObjectMapper objectMapper;
 
-    public RedisBackend(String serverEndpoint) {
+    public RedisIdentityPolicyManager(String serverEndpoint) {
         client = RedisClient.create("redis://" + serverEndpoint);
         sync = client.connect().sync();
         objectMapper = new ObjectMapper().findAndRegisterModules();
     }
 
-    @Override
-    public List<String> resolvePolicyIdsForPrincipal(String principalId) {
+    private List<String> resolvePolicyIdsForPrincipal(String principalId) {
         // get the list of policies the principal is directly entitled to
         final Set<String> self = sync.smembers(PRINCIPAL_TO_POLICY_MAP + principalId);
-        final Set<String> gids = new HashSet<>();
-        final Set<String> immediateMembership = sync.smembers(PRINCIPAL_TO_GROUP_MAP + principalId);
-        final Queue<String> queue = new ArrayDeque<>(immediateMembership);
-        // TODO this operation is O(M) where M = # of edges connecting the groups, maybe there is a way to optimize
-        while (!queue.isEmpty()) {
-            final String gid = queue.poll();
-            gids.add(gid);
-            for (String childGid : sync.smembers(GROUP_TO_GROUP_MAP + gid)) {
-                if (!gids.contains(childGid)) {
-                    queue.offer(childGid);
-                }
-            }
-        }
+        List<String> gids = getGroupMembershipTransitively(principalId);
         return Stream
                 .concat(self.stream(), gids.stream().flatMap(gid -> sync.smembers(PRINCIPAL_TO_POLICY_MAP + gid).stream()))
                 .distinct()
                 .collect(toList());
     }
 
-    @Override
-    public List<Policy> loadPolicies(List<String> policyIds) {
+    private List<IdentityPolicy> loadPolicies(List<String> policyIds) {
         return policyIds
                 .stream()
                 .map(pid -> {
@@ -67,7 +53,7 @@ public class RedisBackend implements Backend, Closeable {
                         return null;
                     }
                     try {
-                        return objectMapper.readValue(json, ImmutablePolicy.class);
+                        return objectMapper.readValue(json, ImmutableIdentityPolicy.class);
                     } catch (IOException e) {
                         e.printStackTrace();
                         return null;
@@ -186,10 +172,10 @@ public class RedisBackend implements Backend, Closeable {
     }
 
     @Override
-    public void createPolicy(Policy policy) {
+    public void createPolicy(IdentityPolicy identityPolicy) {
         try {
-            final String json = objectMapper.writeValueAsString(policy);
-            sync.set(POLICY + policy.id(), json);
+            final String json = objectMapper.writeValueAsString(identityPolicy);
+            sync.set(POLICY + identityPolicy.id(), json);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -197,13 +183,13 @@ public class RedisBackend implements Backend, Closeable {
     }
 
     @Override
-    public Policy getPolicy(String policyId) {
+    public IdentityPolicy getPolicy(String policyId) {
         final String json = sync.get(POLICY + policyId);
         try {
             if (json == null) {
                 return null;
             }
-            return objectMapper.readValue(json, ImmutablePolicy.class);
+            return objectMapper.readValue(json, ImmutableIdentityPolicy.class);
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -211,8 +197,8 @@ public class RedisBackend implements Backend, Closeable {
     }
 
     @Override
-    public void updatePolicy(Policy policy) {
-        createPolicy(policy);
+    public void updatePolicy(IdentityPolicy identityPolicy) {
+        createPolicy(identityPolicy);
     }
 
     @Override
@@ -233,8 +219,32 @@ public class RedisBackend implements Backend, Closeable {
     }
 
     @Override
+    public List<String> getGroupMembershipTransitively(String principalId) {
+        final Set<String> gids = new HashSet<>();
+        final Set<String> immediateMembership = sync.smembers(PRINCIPAL_TO_GROUP_MAP + principalId);
+        final Queue<String> queue = new ArrayDeque<>(immediateMembership);
+        // TODO this operation is O(M) where M = # of edges connecting the groups, maybe there is a way to optimize
+        while (!queue.isEmpty()) {
+            final String gid = queue.poll();
+            gids.add(gid);
+            for (String childGid : sync.smembers(GROUP_TO_GROUP_MAP + gid)) {
+                if (!gids.contains(childGid)) {
+                    queue.offer(childGid);
+                }
+            }
+        }
+        return new ArrayList<>(gids);
+    }
+
+    @Override
     public void close() {
         sync.shutdown(true);
         client.shutdown();
+    }
+
+    @Override
+    public List<IdentityPolicy> fetchIdentityPoliciesTransitivelyForPrincipal(String principalId) {
+        final List<String> policyIds = resolvePolicyIdsForPrincipal(principalId);
+        return loadPolicies(policyIds);
     }
 }

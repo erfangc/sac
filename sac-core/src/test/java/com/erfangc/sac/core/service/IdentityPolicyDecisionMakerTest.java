@@ -10,7 +10,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
-public class PolicyDecisionMakerTest {
+public class IdentityPolicyDecisionMakerTest {
 
     @Test
     public void makeAccessDecision() {
@@ -26,8 +26,8 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = singletonList(
-                ImmutablePolicy
+        List<IdentityPolicy> policies = singletonList(
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy1")
                         .actions(asList("increase", "decrease"))
@@ -53,15 +53,15 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = asList(
-                ImmutablePolicy
+        List<IdentityPolicy> policies = asList(
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy1")
                         .actions(asList("increase", "decrease"))
                         .resource("/hr/salaries/john")
                         .effectDeny(true)
                         .build(),
-                ImmutablePolicy
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy2")
                         .actions(asList("increase", "decrease"))
@@ -88,8 +88,8 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = singletonList(
-                ImmutablePolicy
+        List<IdentityPolicy> policies = singletonList(
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy1")
                         .actions(singletonList("*"))
@@ -115,8 +115,8 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = singletonList(
-                ImmutablePolicy
+        List<IdentityPolicy> policies = singletonList(
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy1")
                         .actions(singletonList("*"))
@@ -134,8 +134,8 @@ public class PolicyDecisionMakerTest {
         final PolicyDecisionMaker policyDecisionMaker = new PolicyDecisionMaker();
         final String requestId = UUID.randomUUID().toString();
 
-        List<Policy> policies = singletonList(
-                ImmutablePolicy
+        List<IdentityPolicy> policies = singletonList(
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy1")
                         .actions(asList("increase", "decrease"))
@@ -170,15 +170,15 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = asList(
-                ImmutablePolicy
+        List<IdentityPolicy> policies = asList(
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy1")
                         .actions(asList("increase", "decrease"))
                         .resource("/hr/salaries/john")
                         .effectDeny(true)
                         .build(),
-                ImmutablePolicy
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy2")
                         .actions(asList("increase", "decrease"))
@@ -205,14 +205,14 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = asList(
-                ImmutablePolicy
+        List<IdentityPolicy> policies = asList(
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy1")
                         .actions(asList("increase", "decrease"))
                         .resource("/hr/salaries/john")
                         .build(),
-                ImmutablePolicy
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy2")
                         .actions(singletonList("*"))
@@ -239,14 +239,14 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = asList(
-                ImmutablePolicy
+        List<IdentityPolicy> policies = asList(
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy1")
                         .actions(singletonList("*"))
                         .resource("/hr/birthdays/*")
                         .build(),
-                ImmutablePolicy
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy2")
                         .actions(asList("increase", "decrease"))
@@ -273,8 +273,8 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = singletonList(
-                ImmutablePolicy
+        List<IdentityPolicy> policies = singletonList(
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy1")
                         .actions(asList("increase", "decrease"))
@@ -301,8 +301,8 @@ public class PolicyDecisionMakerTest {
                 .action("increase")
                 .build();
 
-        List<Policy> policies = singletonList(
-                ImmutablePolicy
+        List<IdentityPolicy> policies = singletonList(
+                ImmutableIdentityPolicy
                         .builder()
                         .id("policy1")
                         .actions(asList("increase", "decrease"))

@@ -22,8 +22,8 @@ public class BackendTestBase {
                 .build();
     }
 
-    private Policy managePayPolicy() {
-        return ImmutablePolicy
+    private IdentityPolicy managePayPolicy() {
+        return ImmutableIdentityPolicy
                 .builder()
                 .id("manage pay")
                 .actions(asList("increase", "decrease"))
@@ -31,8 +31,8 @@ public class BackendTestBase {
                 .build();
     }
 
-    private Policy serverLoginPolicy() {
-        return ImmutablePolicy
+    private IdentityPolicy serverLoginPolicy() {
+        return ImmutableIdentityPolicy
                 .builder()
                 .id("server login")
                 .actions(singletonList("login"))
@@ -40,8 +40,8 @@ public class BackendTestBase {
                 .build();
     }
 
-    private Policy employeeReadOnlyPolicy() {
-        return ImmutablePolicy
+    private IdentityPolicy employeeReadOnlyPolicy() {
+        return ImmutableIdentityPolicy
                 .builder()
                 .id("employee read only")
                 .actions(singletonList("read"))
@@ -75,20 +75,20 @@ public class BackendTestBase {
         final Group allEmployees = allEmployees();
         sac.createGroup(allEmployees);
 
-        final Policy employeeReadOnlyPolicy = employeeReadOnlyPolicy();
-        sac.createPolicy(employeeReadOnlyPolicy);
-        sac.assignPolicy(employeeReadOnlyPolicy.id(), allEmployees.id());
+        final IdentityPolicy employeeReadOnlyIdentityPolicy = employeeReadOnlyPolicy();
+        sac.createPolicy(employeeReadOnlyIdentityPolicy);
+        sac.assignPolicy(employeeReadOnlyIdentityPolicy.id(), allEmployees.id());
 
         sac.assignPrincipalToGroup(allEmployees.id(), humanResources.id(), true);
         sac.assignPrincipalToGroup(allEmployees.id(), networkAdmins.id(), true);
 
-        final Policy serverLoginPolicy = serverLoginPolicy();
-        sac.createPolicy(serverLoginPolicy);
-        sac.assignPolicy(serverLoginPolicy.id(), networkAdmins.id());
+        final IdentityPolicy serverLoginIdentityPolicy = serverLoginPolicy();
+        sac.createPolicy(serverLoginIdentityPolicy);
+        sac.assignPolicy(serverLoginIdentityPolicy.id(), networkAdmins.id());
 
-        final Policy managePayPolicy = managePayPolicy();
-        sac.createPolicy(managePayPolicy);
-        sac.assignPolicy(managePayPolicy.id(), humanResources.id());
+        final IdentityPolicy managePayIdentityPolicy = managePayPolicy();
+        sac.createPolicy(managePayIdentityPolicy);
+        sac.assignPolicy(managePayIdentityPolicy.id(), humanResources.id());
     }
 
     @Test
@@ -200,29 +200,29 @@ public class BackendTestBase {
 
     @Test
     public void createPolicy() {
-        Policy newPolicy = ImmutablePolicy
+        IdentityPolicy newIdentityPolicy = ImmutableIdentityPolicy
                 .builder()
                 .id("new policy")
                 .resource("/foo/bar")
                 .actions(singletonList("*"))
                 .build();
-        sac.createPolicy(newPolicy);
-        final Policy policy = sac.getPolicy(newPolicy.id());
-        assertEquals("new policy", policy.id());
+        sac.createPolicy(newIdentityPolicy);
+        final IdentityPolicy identityPolicy = sac.getPolicy(newIdentityPolicy.id());
+        assertEquals("new policy", identityPolicy.id());
     }
 
     @Test
     public void getPolicy() {
-        final Policy policy = sac.getPolicy(managePayPolicy().id());
-        assertEquals("manage pay", policy.id());
+        final IdentityPolicy identityPolicy = sac.getPolicy(managePayPolicy().id());
+        assertEquals("manage pay", identityPolicy.id());
     }
 
     @Test
     public void updatePolicy() {
-        final Policy policy = managePayPolicy();
-        final ImmutablePolicy updated = ImmutablePolicy.copyOf(policy).withName("Foobar");
+        final IdentityPolicy identityPolicy = managePayPolicy();
+        final ImmutableIdentityPolicy updated = ImmutableIdentityPolicy.copyOf(identityPolicy).withName("Foobar");
         sac.updatePolicy(updated);
-        final Policy result = sac.getPolicy(updated.id());
+        final IdentityPolicy result = sac.getPolicy(updated.id());
         assertTrue(result.name().isPresent());
         assertEquals("Foobar", result.name().get());
     }
@@ -231,8 +231,8 @@ public class BackendTestBase {
     public void deletePolicy() {
         final String policyId = managePayPolicy().id();
         sac.deletePolicy(policyId);
-        final Policy policy = sac.getPolicy(policyId);
-        assertNull(policy);
+        final IdentityPolicy identityPolicy = sac.getPolicy(policyId);
+        assertNull(identityPolicy);
     }
 
     @Test

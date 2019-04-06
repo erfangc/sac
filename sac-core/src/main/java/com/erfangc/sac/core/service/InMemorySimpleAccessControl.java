@@ -1,6 +1,6 @@
 package com.erfangc.sac.core.service;
 
-import com.erfangc.sac.core.backend.inmemory.InMemoryBackend;
+import com.erfangc.sac.core.backend.inmemory.InMemoryIdentityPolicyManager;
 import com.erfangc.sac.interfaces.*;
 
 import java.util.List;
@@ -10,7 +10,7 @@ public class InMemorySimpleAccessControl implements SimpleAccessControl {
     private final SimpleAccessControlImpl delegate;
 
     private InMemorySimpleAccessControl() {
-        delegate = new SimpleAccessControlImpl(new InMemoryBackend());
+        delegate = new SimpleAccessControlImpl(new InMemoryIdentityPolicyManager());
     }
 
     public static synchronized InMemorySimpleAccessControl getInstance() {
@@ -63,23 +63,28 @@ public class InMemorySimpleAccessControl implements SimpleAccessControl {
     }
 
     @Override
+    public List<String> getGroupMembershipTransitively(String principalId) {
+        return null;
+    }
+
+    @Override
     public Node getGroupTree(String groupId) {
         return delegate.getGroupTree(groupId);
     }
 
     @Override
-    public void createPolicy(Policy policy) {
-        delegate.createPolicy(policy);
+    public void createPolicy(IdentityPolicy identityPolicy) {
+        delegate.createPolicy(identityPolicy);
     }
 
     @Override
-    public Policy getPolicy(String policyId) {
+    public IdentityPolicy getPolicy(String policyId) {
         return delegate.getPolicy(policyId);
     }
 
     @Override
-    public void updatePolicy(Policy policy) {
-        delegate.updatePolicy(policy);
+    public void updatePolicy(IdentityPolicy identityPolicy) {
+        delegate.updatePolicy(identityPolicy);
     }
 
     @Override

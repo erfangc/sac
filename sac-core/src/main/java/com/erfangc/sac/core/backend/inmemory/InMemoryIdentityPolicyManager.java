@@ -6,20 +6,20 @@ import com.erfangc.sac.interfaces.*;
 import java.util.*;
 
 import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toCollection;
 
-public class InMemoryBackend implements Backend {
+public class InMemoryIdentityPolicyManager implements Backend {
 
     private Map<String, Group> groups;
-    private Map<String, Policy> policies;
+    private Map<String, IdentityPolicy> policies;
 
     private Map<String, Map<String, String>> groupToPrincipalMap;
     private Map<String, Map<String, Group>> groupToGroupMap;
     private Map<String, Map<String, Group>> principalToGroupMap;
     private Map<String, Map<String, String>> policyToPrincipalMap;
-    private Map<String, Map<String, Policy>> principalToPolicyMap;
+    private Map<String, Map<String, IdentityPolicy>> principalToPolicyMap;
 
-    public InMemoryBackend() {
+    public InMemoryIdentityPolicyManager() {
         policies = new HashMap<>();
         groups = new HashMap<>();
         groupToGroupMap = new HashMap<>();
@@ -27,46 +27,6 @@ public class InMemoryBackend implements Backend {
         principalToGroupMap = new HashMap<>();
         policyToPrincipalMap = new HashMap<>();
         principalToPolicyMap = new HashMap<>();
-    }
-
-    @Override
-    public List<String> resolvePolicyIdsForPrincipal(String principalId) {
-        final Map<String, Group> m1 = principalToGroupMap.get(principalId);
-        // BFS to to construct a list of group membership and transitive group memberships for this principal
-        // gids = groupIds, represents the group Ids the BFS has seen so far, used to both keep track of the results of the
-        // traversal but also mark visited 'nodes' and prevent them from being processed again
-        Set<String> gids = new HashSet<>();
-        if (m1 != null) {
-            Queue<String> queue = m1.values().stream().map(Group::id).collect(toCollection(ArrayDeque::new));
-            while (!queue.isEmpty()) {
-                final String gid = queue.poll();
-                gids.add(gid);
-                if (principalToGroupMap.containsKey(gid)) {
-                    for (String cGid : principalToGroupMap.get(gid).keySet()) {
-                        if (!gids.contains(cGid)) {
-                            queue.add(cGid);
-                        }
-                    }
-                }
-            }
-        }
-        Set<String> ret = principalToPolicyMap.containsKey(principalId) ? principalToPolicyMap
-                .get(principalId)
-                .values()
-                .stream()
-                .map(Policy::id)
-                .collect(toSet()) : new HashSet<>();
-        gids.forEach(gid -> ret.addAll(principalToPolicyMap.getOrDefault(gid, emptyMap()).values().stream().map(Policy::id).collect(toList())));
-        return new ArrayList<>(ret);
-    }
-
-    @Override
-    public List<Policy> loadPolicies(List<String> policyIds) {
-        return policyIds
-                .stream()
-                .map(id -> policies.get(id))
-                .filter(Objects::nonNull)
-                .collect(toList());
     }
 
     @Override
@@ -168,18 +128,18 @@ public class InMemoryBackend implements Backend {
     }
 
     @Override
-    public void createPolicy(Policy policy) {
-        policies.put(policy.id(), policy);
+    public void createPolicy(IdentityPolicy identityPolicy) {
+        policies.put(identityPolicy.id(), identityPolicy);
     }
 
     @Override
-    public Policy getPolicy(String policyId) {
+    public IdentityPolicy getPolicy(String policyId) {
         return policies.get(policyId);
     }
 
     @Override
-    public void updatePolicy(Policy policy) {
-        policies.put(policy.id(), policy);
+    public void updatePolicy(IdentityPolicy identityPolicy) {
+        policies.put(identityPolicy.id(), identityPolicy);
     }
 
     @Override
@@ -190,7 +150,7 @@ public class InMemoryBackend implements Backend {
     @Override
     public synchronized void assignPolicy(String policyId, String principalId) {
         final Map<String, String> m1 = policyToPrincipalMap.getOrDefault(policyId, new HashMap<>());
-        final Map<String, Policy> m2 = principalToPolicyMap.getOrDefault(principalId, new HashMap<>());
+        final Map<String, IdentityPolicy> m2 = principalToPolicyMap.getOrDefault(principalId, new HashMap<>());
         m1.put(policyId, principalId);
         m2.put(principalId, getPolicy(policyId));
         policyToPrincipalMap.put(policyId, m1);
@@ -200,8 +160,42 @@ public class InMemoryBackend implements Backend {
     @Override
     public synchronized void unAssignPolicy(String policyId, String principalId) {
         final Map<String, String> m1 = policyToPrincipalMap.getOrDefault(policyId, new HashMap<>());
-        final Map<String, Policy> m2 = principalToPolicyMap.getOrDefault(principalId, new HashMap<>());
+        final Map<String, IdentityPolicy> m2 = principalToPolicyMap.getOrDefault(principalId, new HashMap<>());
         m1.remove(policyId);
         m2.remove(principalId);
+    }
+
+    @Override
+    public List<String> getGroupMembershipTransitively(String principalId) {
+        final Map<String, Group> m1 = principalToGroupMap.get(principalId);
+        // BFS to to construct a list of group membership and transitive group memberships for this principal
+        // gids = groupIds, represents the group Ids the BFS has seen so far, used to both keep track of the results of the
+        // traversal but also mark visited 'nodes' and prevent them from being processed again
+        Set<String> gids = new HashSet<>();
+        if (m1 != null) {
+            Queue<String> queue = m1.values().stream().map(Group::id).collect(toCollection(ArrayDeque::new));
+            while (!queue.isEmpty()) {
+                final String gid = queue.poll();
+                gids.add(gid);
+                if (principalToGroupMap.containsKey(gid)) {
+                    for (String cGid : principalToGroupMap.get(gid).keySet()) {
+                        if (!gids.contains(cGid)) {
+                            queue.add(cGid);
+                        }
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(gids);
+    }
+
+    @Override
+    public List<IdentityPolicy> fetchIdentityPoliciesTransitivelyForPrincipal(String principalId) {
+        Set<IdentityPolicy> ret = principalToPolicyMap.containsKey(principalId) ? new HashSet<>(principalToPolicyMap
+                .get(principalId)
+                .values()) : new HashSet<>();
+        final List<String> gids = getGroupMembershipTransitively(principalId);
+        gids.forEach(gid -> ret.addAll(new ArrayList<>(principalToPolicyMap.getOrDefault(gid, emptyMap()).values())));
+        return new ArrayList<>(ret);
     }
 }

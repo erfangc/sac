@@ -23,19 +23,19 @@ class PolicyDecisionMaker {
                 .collect(joining("\\/"));
     }
 
-    AuthorizationResponse makeAccessDecision(AuthorizationRequest request, List<Policy> policies) {
+    AuthorizationResponse makeAccessDecision(AuthorizationRequest request, List<IdentityPolicy> policies) {
         boolean hasDeny = false;
         boolean hasPermit = false;
-        for (Policy policy : policies) {
-            if (policy.resource().isPresent()) {
-                final String resource = policy.resource().get();
+        for (IdentityPolicy identityPolicy : policies) {
+            if (identityPolicy.resource().isPresent()) {
+                final String resource = identityPolicy.resource().get();
                 final String regex = toRegex(resource);
                 if (request.resource().matches(regex)) {
-                    final Optional<List<String>> maybeActions = policy.actions();
+                    final Optional<List<String>> maybeActions = identityPolicy.actions();
                     if (maybeActions.isPresent()) {
                         final List<String> actions = maybeActions.get();
                         if (actions.contains(request.action()) || actions.contains("*")) {
-                            if (policy.effectDeny().orElse(false).equals(true)) {
+                            if (identityPolicy.effectDeny().orElse(false).equals(true)) {
                                 hasDeny = true;
                             } else {
                                 hasPermit = true;

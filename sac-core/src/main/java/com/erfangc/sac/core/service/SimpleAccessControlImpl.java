@@ -61,23 +61,28 @@ public class SimpleAccessControlImpl implements SimpleAccessControl {
     }
 
     @Override
+    public List<String> getGroupMembershipTransitively(String principalId) {
+        return backend.getGroupMembershipTransitively(principalId);
+    }
+
+    @Override
     public Node getGroupTree(String groupId) {
         return backend.getGroupTree(groupId);
     }
 
     @Override
-    public void createPolicy(Policy policy) {
-        backend.createPolicy(policy);
+    public void createPolicy(IdentityPolicy identityPolicy) {
+        backend.createPolicy(identityPolicy);
     }
 
     @Override
-    public Policy getPolicy(String policyId) {
+    public IdentityPolicy getPolicy(String policyId) {
         return backend.getPolicy(policyId);
     }
 
     @Override
-    public void updatePolicy(Policy policy) {
-        backend.updatePolicy(policy);
+    public void updatePolicy(IdentityPolicy identityPolicy) {
+        backend.updatePolicy(identityPolicy);
     }
 
     @Override
@@ -97,8 +102,7 @@ public class SimpleAccessControlImpl implements SimpleAccessControl {
 
     @Override
     public AuthorizationResponse authorize(AuthorizationRequest request) {
-        final List<String> policyIds = backend.resolvePolicyIdsForPrincipal(request.principal());
-        final List<Policy> policies = backend.loadPolicies(policyIds);
+        final List<IdentityPolicy> policies = backend.fetchIdentityPoliciesTransitivelyForPrincipal(request.principal());
         return policyDecisionMaker.makeAccessDecision(request, policies);
     }
 }
