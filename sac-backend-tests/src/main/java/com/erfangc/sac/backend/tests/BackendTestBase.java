@@ -387,6 +387,19 @@ public class BackendTestBase {
         sac.revokeActions("/books/book1", humanResources.id(), singleton("write"));
         assertEquals(AuthorizationStatus.Denied, sac.authorize(request).status());
         assertEquals(AuthorizationStatus.Permitted, sac.authorize(request.withAction("read")).status());
+
+        /*
+        Our principal cannot delete books, but let's grant that action
+         */
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request.withAction("delete")).status());
+        sac.grantActions("/books/book1", humanResources.id(), singleton("delete"));
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(request.withAction("delete")).status());
+
+        /*
+        Now let's remove that
+         */
+        sac.revokeActions("/books/book1", humanResources.id(), singleton("delete"));
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(request.withAction("delete")).status());
     }
 
     @Test
