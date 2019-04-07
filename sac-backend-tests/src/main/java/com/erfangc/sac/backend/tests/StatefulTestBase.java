@@ -205,5 +205,40 @@ public class StatefulTestBase {
         sac.revokeActions("/special idea/oscar winning idea", jillTheWriter, singleton("write"));
         assertEquals(AuthorizationStatus.Denied, sac.authorize(requestToWriteOscarIdea.withPrincipal(jillTheWriter)).status());
 
+        /*
+        Temporarily un-assigning executives from being able to release films
+        */
+        sac.unAssignPolicy(releaseFilms.id(), execs.id());
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(johnToReleaseAFilm).status());
+        sac.assignPolicy(releaseFilms.id(), execs.id());
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(johnToReleaseAFilm).status());
+
+        /*
+        Removing everyone's ability to view films
+         */
+        sac.unAssignPolicy(viewFilms.id(), allTeamMembers.id());
+        ImmutableAuthorizationRequest requestToViewFilm = ImmutableAuthorizationRequest
+                .builder()
+                .id("5")
+                .action("view")
+                .resource("/films/some film")
+                .principal("")
+                .build();
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(requestToViewFilm.withPrincipal(johnTheExecutive)).status());
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(requestToViewFilm.withPrincipal(jillTheWriter)).status());
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(requestToViewFilm.withPrincipal(abelTheDirector)).status());
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(requestToViewFilm.withPrincipal(jackTheDirector)).status());
+
+        /*
+        General assertions
+         */
+        assertEquals("/films/*", sac.getPolicy(viewFilms.id()).resource().get());
+        assertEquals("Executives", sac.getGroup(execs.id()).name());
+
+        /*
+        Deleting a policy should result in denies for the resources protected by the policy going forward
+         */
+        sac.deletePolicy(releaseFilms.id());
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(johnToReleaseAFilm).status());
     }
 }

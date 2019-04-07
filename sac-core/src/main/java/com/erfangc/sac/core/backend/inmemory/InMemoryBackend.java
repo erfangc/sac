@@ -8,6 +8,7 @@ import java.util.*;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toMap;
 
 public class InMemoryBackend implements Backend {
 
@@ -155,8 +156,24 @@ public class InMemoryBackend implements Backend {
     }
 
     @Override
-    public void deletePolicy(String policyId) {
+    public synchronized void deletePolicy(String policyId) {
         policies.remove(policyId);
+        // remove any associated policy maps
+        policyToPrincipalMap.remove(policyId);
+        // rebuild the principalToPolicy map, this is very inefficient
+        final Map<String, Map<String, IdentityPolicy>> updatedPrincipalToPolicyMap = principalToPolicyMap
+                .entrySet()
+                .stream()
+                .collect(
+                        toMap(
+                                Map.Entry::getKey,
+                                s -> {
+                                    final Map<String, IdentityPolicy> value = new HashMap<>(s.getValue());
+                                    value.remove(policyId);
+                                    return value;
+                                })
+                );
+        principalToPolicyMap = updatedPrincipalToPolicyMap;
     }
 
     @Override
@@ -164,7 +181,7 @@ public class InMemoryBackend implements Backend {
         final Map<String, String> m1 = policyToPrincipalMap.getOrDefault(policyId, new HashMap<>());
         final Map<String, IdentityPolicy> m2 = principalToPolicyMap.getOrDefault(principalId, new HashMap<>());
         m1.put(policyId, principalId);
-        m2.put(principalId, getPolicy(policyId));
+        m2.put(policyId, getPolicy(policyId));
         policyToPrincipalMap.put(policyId, m1);
         principalToPolicyMap.put(principalId, m2);
     }
@@ -174,7 +191,7 @@ public class InMemoryBackend implements Backend {
         final Map<String, String> m1 = policyToPrincipalMap.getOrDefault(policyId, new HashMap<>());
         final Map<String, IdentityPolicy> m2 = principalToPolicyMap.getOrDefault(principalId, new HashMap<>());
         m1.remove(policyId);
-        m2.remove(principalId);
+        m2.remove(policyId);
     }
 
     @Override
