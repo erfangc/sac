@@ -277,10 +277,17 @@ The project is split into a few components for modularity. Each component is rep
 
 `sac-backend-redis` implements the `Backend` interface declared by `sac-core` using [Lettuce](https://github.com/lettuce-io/lettuce-core)
 
+### Tests
+
+All `Backend` and `SimpleAccessControl` implementations (ex: `RedisBackend`, `InMemoryBackend`) must pass a uniform set of tests at a minimum to guarantee operational readiness. These tests are represented as base classes in the `sac-backend-tests` module. This module offer base classes that you can extend to automatically acquire these tests (which are written in JUnit). These tests are:
+
+ - Unit tests in `BackendTestBase`
+ - A stateful test `StatefulTestBase`
+ 
+The `StatefulTestBase` tests a comprehensive set of interactions layered on top of each other in an interactive scenario rather than testing only a single aspect of the system in isolation 
+
 ## TODOs
 
- - Redis backend
  - Terraform templates
- - Resource based policies
  - Principal attribute forwarding in policies
  - Conditions in policies
