@@ -117,6 +117,13 @@ public class RedisBackend implements Backend, Closeable {
 
     @Override
     public void deleteGroup(String groupId) {
+        // delete any associates created by the given group
+        final Set<String> principals = sync.smembers(GROUP_TO_PRINCIPAL_MAP + groupId);
+        principals.forEach(principal -> {
+            sync.srem(GROUP_TO_GROUP_MAP + principal, groupId);
+            sync.srem(PRINCIPAL_TO_GROUP_MAP + principal, groupId);
+        });
+        sync.del(GROUP_TO_PRINCIPAL_MAP + groupId);
         sync.del(GROUP + groupId);
     }
 
@@ -205,6 +212,10 @@ public class RedisBackend implements Backend, Closeable {
 
     @Override
     public void deletePolicy(String policyId) {
+        // we need to remove all relations created by the existence of this policy
+        final Set<String> principals = sync.smembers(POLICY_TO_PRINCIPAL_MAP + policyId);
+        principals.forEach(principal -> sync.srem(PRINCIPAL_TO_POLICY_MAP + principal, policyId));
+        sync.del(POLICY_TO_PRINCIPAL_MAP + policyId);
         sync.del(POLICY + policyId);
     }
 

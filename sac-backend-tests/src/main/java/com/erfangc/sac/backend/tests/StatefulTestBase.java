@@ -240,5 +240,19 @@ public class StatefulTestBase {
          */
         sac.deletePolicy(releaseFilms.id());
         assertEquals(AuthorizationStatus.Denied, sac.authorize(johnToReleaseAFilm).status());
+        sac.createPolicy(releaseFilms);
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(johnToReleaseAFilm).status());
+        sac.assignPolicy(releaseFilms.id(), execs.id());
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(johnToReleaseAFilm).status());
+
+        /*
+        Deleting a group should result in denies for all resources protected by policies assigned to that group
+         */
+        sac.deleteGroup(execs.id());
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(johnToReleaseAFilm).status());
+        sac.createGroup(execs);
+        assertEquals(AuthorizationStatus.Denied, sac.authorize(johnToReleaseAFilm).status());
+        sac.assignPrincipalToGroup(execs.id(), johnTheExecutive);
+        assertEquals(AuthorizationStatus.Permitted, sac.authorize(johnToReleaseAFilm).status());
     }
 }

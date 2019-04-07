@@ -67,7 +67,12 @@ public class InMemoryBackend implements Backend {
     }
 
     @Override
-    public void deleteGroup(String groupId) {
+    public synchronized void deleteGroup(String groupId) {
+        final Set<String> principals = groupToPrincipalMap.getOrDefault(groupId, emptyMap()).keySet();
+        principals.forEach(principal -> {
+            groupToGroupMap.getOrDefault(principal, emptyMap()).remove(groupId);
+            principalToGroupMap.getOrDefault(principal, emptyMap()).remove(groupId);
+        });
         groups.remove(groupId);
     }
 
