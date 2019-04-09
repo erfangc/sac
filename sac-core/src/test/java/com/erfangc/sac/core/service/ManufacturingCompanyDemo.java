@@ -30,10 +30,6 @@ public class ManufacturingCompanyDemo {
     private static final int cyan = 36;
     private static final int white = 37;
 
-    private static void setConsoleColor(int color) {
-        System.out.println((char) 27 + "[" + color + "m");
-    }
-
     private static final ImmutableGroup manufacturingTeam = ImmutableGroup
             .builder()
             .id("manufacturing")
@@ -81,7 +77,11 @@ public class ManufacturingCompanyDemo {
             .resource("/employees/*")
             .build();
 
-    public static void main(String[] args) throws JsonProcessingException {
+    private static void setConsoleColor(int color) {
+        System.out.println((char) 27 + "[" + color + "m");
+    }
+
+    public static void main(String[] args) {
         showIntro();
         pause();
         createGroups();
@@ -118,8 +118,7 @@ public class ManufacturingCompanyDemo {
 
         pause();
 
-        printBlue("Let's say we need to raise sales of baby pacifiers, so the company want Todd's help");
-        printBlue("However, we don't want Todd, who is from manufacturing, to sell just any item, we only want him to sell baby pacifiers");
+        printBlue("Let's say we need to raise sales of baby pacifiers, so the company want Todd's help.\nHowever, we don't want Todd, who is from manufacturing, to sell just any item, we only want him to sell baby pacifiers");
         ImmutableIdentityPolicy tempPolicy = ImmutableIdentityPolicy
                 .builder()
                 .id("temp-policy")
@@ -257,7 +256,6 @@ public class ManufacturingCompanyDemo {
     private static void showIntro() {
         printBlue("Welcome to MCorp. we are a new business with no customers or employees yet! Our business takes environmentally safe plastics and rubber and turn them into baby toys.\nLet's create 3 teams before we start hiring: manufacturing, executives and sales:");
         pause();
-        promptEnterKey();
     }
 
     private static void printRequest(String method, String url) {
@@ -266,7 +264,7 @@ public class ManufacturingCompanyDemo {
 
     private static void printRequest(Request request) {
         setConsoleColor(magenta);
-        System.out.println("------------------------------------------------------------------------------------------");
+        System.out.println("-------------------------- Request to Execute ---------------------------------------------");
         System.out.println("/" + request.method + " " + request.url);
         if (request.body != null) {
             try {
@@ -277,27 +275,6 @@ public class ManufacturingCompanyDemo {
         }
         System.out.println("------------------------------------------------------------------------------------------");
         setConsoleColor(black);
-    }
-
-    private static class Request {
-        String method;
-        String url;
-        Object body;
-
-        Request setMethod(String method) {
-            this.method = method;
-            return this;
-        }
-
-        Request setUrl(String url) {
-            this.url = url;
-            return this;
-        }
-
-        Request setBody(Object body) {
-            this.body = body;
-            return this;
-        }
     }
 
     private static void printGreen(String message) {
@@ -319,9 +296,30 @@ public class ManufacturingCompanyDemo {
     }
 
     private static void promptEnterKey() {
-        System.out.println("Press \"ENTER\" to submit the request...");
+        System.out.print("Press \"ENTER\" to submit the request...");
         Scanner scanner = new Scanner(System.in);
         scanner.nextLine();
+    }
+
+    private static class Request {
+        String method;
+        String url;
+        Object body;
+
+        Request setMethod(String method) {
+            this.method = method;
+            return this;
+        }
+
+        Request setUrl(String url) {
+            this.url = url;
+            return this;
+        }
+
+        Request setBody(Object body) {
+            this.body = body;
+            return this;
+        }
     }
 
 }
