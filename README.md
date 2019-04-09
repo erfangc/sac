@@ -4,6 +4,9 @@
 
 Simple Access Control (SAC) is a friendly and streamlined authorization library inspired by industry standards such as IAM, ABAC (Attribute Based Access Control) and RBAC (Role Based Access Control). SAC borrows philosophically from XACML but replaces its OASIS specification with a modern JSON/YAML representation. Much of the more esoteric aspects are also ignored at the present moment in favor of simplicity and common use
 
+## Demo
+![demo](./docs/images/manufacturing-demo.gif)
+
 ## Difference from OAuth 2.0
 
 The reason I felt the need to create this library instead of relying on OAuth 2.0 is mostly because OAuth 2.0 is built to solve for different needs. OAuth 2.0 assumes users are the owner of resources. Users in OAuth grants permissions to applications to access their data. While this is definitely true in social networking websites, this paradigm is in stark contrast to many use cases in enterprise, where resources are "administered" by an authority and various users are entitled to work with a sub-set of all available resources on the system. In the latter context, granular access control must be possible for an organization to function properly. This granularity must be achieved through a DSL that is expressive enough to cover a wide range of use cases and resource sharing schemes that OAuth simply was not designed to accommodate.

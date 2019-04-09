@@ -247,7 +247,7 @@ public class ManufacturingCompanyDemo {
 
     private static void pause() {
         try {
-            Thread.sleep(1000);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
