@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -82,6 +83,7 @@ public class ManufacturingCompanyDemo {
     }
 
     public static void main(String[] args) {
+        realPromptEnterKey();
         showIntro();
         pause();
         createGroups();
@@ -106,14 +108,14 @@ public class ManufacturingCompanyDemo {
 
         printBlue("Todd (the manufacturing guy) shouldn't be able to sell pacifiers, since he is not part of the sales team:");
         printRequest(new Request().setMethod("POST").setUrl(apiV1 + "authorize").setBody(toddToSellPacifier));
-        promptEnterKey();
+        fakePromptEnterKey();
         printRed("Response status: " + sac.authorize(toddToSellPacifier).status());
 
         pause();
 
         printBlue("Sally on the other hand should be permitted since she belongs to the sales team:");
         printRequest(new Request().setMethod("POST").setUrl(apiV1 + "authorize").setBody(sallyToSellPacifier));
-        promptEnterKey();
+        fakePromptEnterKey();
         printGreen("Response status: " + sac.authorize(sallyToSellPacifier).status());
 
         pause();
@@ -127,7 +129,7 @@ public class ManufacturingCompanyDemo {
                 .build();
         printRequest(new Request().setUrl(apiV1 + "policies").setBody(tempPolicy));
         printRequest(new Request().setUrl(apiV1 + "policies/" + tempPolicy.id() + "/_assign?principal=todd"));
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.createPolicy(tempPolicy);
         sac.assignPolicy(tempPolicy.id(), "todd");
         printGreen("Done!");
@@ -136,21 +138,21 @@ public class ManufacturingCompanyDemo {
 
         printBlue("Now Todd can sell pacifiers");
         printRequest(new Request().setMethod("POST").setUrl("authorize").setBody(toddToSellPacifier));
-        promptEnterKey();
+        fakePromptEnterKey();
         printGreen("Response status: " + sac.authorize(toddToSellPacifier).status());
 
         pause();
 
         printBlue("But Todd can't sell anything else");
         printRequest(new Request().setMethod("POST").setUrl("authorize").setBody(toddToSellPacifier.withResource("/products/baby-legos")));
-        promptEnterKey();
+        fakePromptEnterKey();
         printRed("Response status: " + sac.authorize(toddToSellPacifier.withResource("/products/baby-legos")).status());
 
         pause();
 
         printBlue("Once we are done, we can revoke Todd's permissions by unassigning him from the policy");
         printRequest("POST", apiV1 + "policies/" + tempPolicy.id() + "_unassign?principal=todd");
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.unAssignPolicy(tempPolicy.id(), "todd");
         printGreen("Done!");
 
@@ -158,28 +160,28 @@ public class ManufacturingCompanyDemo {
 
         printBlue("Now Todd can no longer sell pacifiers");
         printRequest(new Request().setMethod("POST").setUrl("authorize").setBody(toddToSellPacifier));
-        promptEnterKey();
+        fakePromptEnterKey();
         printRed("Response status: " + sac.authorize(toddToSellPacifier).status());
     }
 
     private static void hireEmployees() {
         printBlue("Let's hire John the executive:");
         printRequest("POST", apiV1 + "groups/" + executives.id() + "/_assign?principal=john");
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.assignPrincipalToGroup(executives.id(), "john");
         printGreen("Hired");
         pause();
 
         printBlue("Let's hire Todd the production guy:");
         printRequest(new Request().setMethod("POST").setUrl(apiV1 + "groups/" + manufacturingTeam.id() + "/_assign?principal=todd"));
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.assignPrincipalToGroup(manufacturingTeam.id(), "todd");
         printGreen("Hired");
         pause();
 
         printBlue("Let's hire Sally the sales gal:");
         printRequest("POST", apiV1 + "groups/" + salesTeam.id() + "/_assign?principal=sally");
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.assignPrincipalToGroup(salesTeam.id(), "sally");
         printGreen("Hired");
         pause();
@@ -188,7 +190,7 @@ public class ManufacturingCompanyDemo {
     private static void createPolicies() {
         printBlue("Let's now create a policy to allow people to operate the assembly line:");
         printRequest(new Request().setMethod("POST").setUrl(apiV1 + "policies").setBody(operateAssemblyLine));
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.createPolicy(operateAssemblyLine);
         printGreen("Created!");
 
@@ -196,14 +198,14 @@ public class ManufacturingCompanyDemo {
 
         printBlue("We need to make sure only manufacturing team members are assigned this policy to operate the assembly line:");
         printRequest("POST", apiV1 + "policies/" + operateAssemblyLine.id() + "/_assign?principal=" + manufacturingTeam.id());
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.assignPolicy(operateAssemblyLine.id(), manufacturingTeam.id());
 
         pause();
 
         printBlue("Create a policy to allow people to sell finished products:");
         printRequest(new Request().setMethod("POST").setUrl(apiV1 + "policies").setBody(manageProducts));
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.createPolicy(manageProducts);
         printGreen("Created!");
 
@@ -211,14 +213,14 @@ public class ManufacturingCompanyDemo {
 
         printBlue("We need to make sure only the sales team can manage product sales and refunds:");
         printRequest(new Request().setMethod("POST").setUrl(apiV1 + "policies/" + manageProducts.id() + "/_assign?principal=" + salesTeam.id()));
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.assignPolicy(manageProducts.id(), salesTeam.id());
         printGreen("Created!");
 
         printBlue("Along those lines, let's create a policy so only executives can set salaries:");
         printRequest(new Request().setMethod("POST").setUrl(apiV1 + "policies").setBody(setSalaries));
-        printRequest(new Request().setMethod("POST").setUrl("policies/" + setSalaries.id() + "/_assign?principal=" + executives.id()).setBody(setSalaries));
-        promptEnterKey();
+        printRequest("POST", "policies/" + setSalaries.id() + "/_assign?principal=" + executives.id());
+        fakePromptEnterKey();
         sac.createPolicy(setSalaries);
         sac.assignPolicy(setSalaries.id(), executives.id());
         printGreen("Created!");
@@ -226,21 +228,21 @@ public class ManufacturingCompanyDemo {
 
     private static void createGroups() {
         printRequest(new Request().setUrl("auth.mcorp.com/api/v1/groups").setMethod("POST").setBody(manufacturingTeam));
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.createGroup(manufacturingTeam);
         printGreen("Created!");
 
         pause();
 
         printRequest(new Request().setUrl(apiV1 + "groups").setMethod("POST").setBody(salesTeam));
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.createGroup(salesTeam);
         printGreen("Created!");
 
         pause();
 
         printRequest(new Request().setUrl(apiV1 + "groups").setMethod("POST").setBody(executives));
-        promptEnterKey();
+        fakePromptEnterKey();
         sac.createGroup(executives);
         printGreen("Created!");
     }
@@ -295,8 +297,17 @@ public class ManufacturingCompanyDemo {
         setConsoleColor(black);
     }
 
-    private static void promptEnterKey() {
+    private static void fakePromptEnterKey() {
         System.out.print("Press \"ENTER\" to submit the request...");
+        try {
+            Thread.sleep(TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS));
+            System.out.println();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void realPromptEnterKey() {
         Scanner scanner = new Scanner(System.in);
         scanner.nextLine();
     }
