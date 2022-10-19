@@ -16,7 +16,7 @@
     <name>sac</name>
 
     <properties>
-        <jackson.version>2.10.0</jackson.version>
+        <jackson.version>2.13.4.1</jackson.version>
     </properties>
 
     <dependencies>
